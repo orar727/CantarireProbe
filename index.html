@@ -409,7 +409,7 @@
 
   <!-- MODAL CATALOG CODURI DE BARE MEMORATE -->
   <div id="catalogModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
       <button onclick="window.closeCatalogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
@@ -419,33 +419,91 @@
           <i data-lucide="barcode" class="w-6 h-6"></i>
         </div>
         <div>
-          <h3 class="font-extrabold text-base">Catalog Coduri de Bare Mappings</h3>
-          <p class="text-xs text-slate-500">Produse asociate automat prin scanare</p>
+          <h3 class="font-extrabold text-base">Catalog Coduri de Bare & Furnizori</h3>
+          <p class="text-xs text-slate-500">Produse cu unul sau mai multe coduri EAN asociate</p>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-xl my-2">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider z-10">
-            <tr>
-              <th class="py-2.5 px-3">Cod de Bare</th>
-              <th class="py-2.5 px-3">Nume Produs Asociat</th>
-              <th class="py-2.5 px-3 text-right">Țintă (g)</th>
-              <th class="py-2.5 px-3 text-center w-10">Șterge</th>
-            </tr>
-          </thead>
-          <tbody id="catalogTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
-        </table>
+      <!-- Buton Scanare Rapidă din Catalog -->
+      <button onclick="window.openBarcodeScanner()" class="w-full mb-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-[0.99]">
+        <i data-lucide="qr-code" class="w-4 h-4"></i>
+        <span>Scanează Cod Nou cu Camera pentru Asociere Rapidă</span>
+      </button>
+
+      <!-- Formular adăugare/asociere manuală EAN direct din Catalog -->
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
+        <div class="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+          <span class="flex items-center gap-1"><i data-lucide="plus-circle" class="w-3.5 h-3.5 text-indigo-600"></i> Adaugă / Asociază Cod EAN Nou</span>
+          <span class="text-[10px] text-slate-400 font-normal">Poți adăuga mai multe coduri la același produs</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+          <div class="sm:col-span-5">
+            <input type="text" id="catInputName" list="existingProductsList" placeholder="Nume Produs (ex: Iaurt 250g)" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+            <datalist id="existingProductsList"></datalist>
+          </div>
+          <div class="sm:col-span-4">
+            <input type="text" id="catInputEan" placeholder="Cod EAN (ex: 594123...)" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div class="sm:col-span-3">
+            <input type="number" id="catInputWeight" placeholder="Țintă (g)" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+        <button onclick="window.addManualCatalogMapping()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i>
+          <span>Salvează / Asociază Codul la Produs</span>
+        </button>
+      </div>
+
+      <!-- Lista Grupata Produse si Coduri EAN asociate -->
+      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-xl my-1 p-2 space-y-2 bg-slate-50/50">
+        <div id="catalogGroupedContainer" class="space-y-2"></div>
         <div id="catalogEmptyState" class="py-8 text-center text-slate-400">
           <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-1 text-slate-300"></i>
           <p class="text-xs font-semibold text-slate-500">Nu ai asocieri salvate încă.</p>
-          <p class="text-[11px]">Scanează un cod nou și salvează proba pentru a-l înregistra.</p>
+          <p class="text-[11px]">Scanează un cod nou sau adaugă unul manual folosind formularul de mai sus.</p>
         </div>
       </div>
 
       <div class="pt-2 text-right">
         <button onclick="window.closeCatalogModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl text-xs transition">
           Închide
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ASOCIERE RAPIDĂ EAN LA PRODUS EXISTENT (FĂRĂ TASTARE) -->
+  <div id="mapEanModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
+      <button onclick="window.closeMapEanModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-2 text-indigo-900">
+        <div class="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+          <i data-lucide="barcode" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base">Asociază Cod de Bare</h3>
+          <p class="text-xs text-indigo-600 font-mono font-extrabold" id="mapEanCodeDisplay"></p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-3 font-medium">Alege din listă produsul la care aparține acest cod EAN (apasa pe buton):</p>
+
+      <!-- Căutare filtrată în produse -->
+      <input type="text" id="mapEanSearchInput" oninput="window.filterMapEanProducts()" placeholder="🔍 Caută produs în listă..." class="w-full px-3 py-2 mb-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500">
+
+      <!-- Lista Produse Existente -->
+      <div id="mapEanProductsList" class="flex-1 overflow-y-auto space-y-2 border border-slate-200 rounded-xl p-2 bg-slate-50/50 max-h-[260px]">
+        <!-- Se populează dinamic -->
+      </div>
+
+      <!-- Opțiune creare produs nou dacă nu e în listă -->
+      <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center text-xs">
+        <span class="text-slate-400 font-medium">Nu găsești produsul?</span>
+        <button onclick="window.createProductFromMapModal()" class="text-indigo-600 hover:text-indigo-800 font-bold underline">
+          Creează Produs Nou
         </button>
       </div>
     </div>
@@ -527,19 +585,147 @@
   </div>
 
   <script>
-    // Global App State bound to window scope for ES modules access
-    window.targetWeight = 1000;
-    window.selectedWeight = 1000;
-    window.step = 5;
-    window.buttonCountPerSide = 6;
-    window.samplesList = [];
-    window.barcodeCatalog = {};
-    window.pendingBarcodeToMap = null;
-    window.sampleCounter = 1;
-    window.labelModeActive = false;
-    window.soundMode = 'full'; 
-    window.audioCtx = null;
-    window.html5QrCodeInstance = null;
+    // Global state variables explicitly initialized
+    var targetWeight = 1000;
+    var selectedWeight = 1000;
+    var step = 5;
+    var buttonCountPerSide = 6;
+    var samplesList = [];
+    var barcodeCatalog = {};
+    var pendingBarcodeToMap = null;
+    var pendingScannedEan = null;
+    var sampleCounter = 1;
+    var labelModeActive = false;
+    var soundMode = 'full'; 
+    var audioCtx = null;
+    var html5QrCodeInstance = null;
+
+    // Global window exports
+    window.targetWeight = targetWeight;
+    window.selectedWeight = selectedWeight;
+    window.step = step;
+    window.buttonCountPerSide = buttonCountPerSide;
+    window.samplesList = samplesList;
+    window.barcodeCatalog = barcodeCatalog;
+    window.pendingBarcodeToMap = pendingBarcodeToMap;
+    window.pendingScannedEan = pendingScannedEan;
+    window.sampleCounter = sampleCounter;
+    window.labelModeActive = labelModeActive;
+    window.soundMode = soundMode;
+    window.audioCtx = audioCtx;
+    window.html5QrCodeInstance = html5QrCodeInstance;
+
+    // Modal asociere rapidă fără tastare
+    window.openMapEanModal = function(code) {
+      window.pendingScannedEan = code;
+      const display = document.getElementById('mapEanCodeDisplay');
+      if (display) display.innerText = `Cod Scanat: ${code}`;
+
+      const searchInput = document.getElementById('mapEanSearchInput');
+      if (searchInput) searchInput.value = '';
+
+      window.renderMapEanProductList();
+
+      const modal = document.getElementById('mapEanModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeMapEanModal = function() {
+      const modal = document.getElementById('mapEanModal');
+      if (!modal) return;
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+      window.pendingScannedEan = null;
+    };
+
+    window.renderMapEanProductList = function(searchTerm = '') {
+      const container = document.getElementById('mapEanProductsList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const uniqueProds = {};
+      Object.keys(window.barcodeCatalog).forEach(code => {
+        const item = window.barcodeCatalog[code];
+        const name = item.name || 'Fără nume';
+        if (!uniqueProds[name]) {
+          uniqueProds[name] = item.targetWeight || null;
+        }
+      });
+
+      const productNames = Object.keys(uniqueProds).filter(name => 
+        name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      if (productNames.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 text-center text-slate-400 text-xs font-semibold">
+            Nu există încă produse salvate în catalog.<br>Apasă "Creează Produs Nou" de mai jos.
+          </div>`;
+        return;
+      }
+
+      productNames.forEach(name => {
+        const targetW = uniqueProds[name];
+        const btn = document.createElement('button');
+        btn.className = "w-full p-2.5 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-left transition shadow-sm flex justify-between items-center group active:scale-[0.99]";
+        btn.innerHTML = `
+          <div>
+            <div class="font-extrabold text-xs text-slate-800 group-hover:text-indigo-900">${name}</div>
+            <div class="text-[10px] text-slate-400">Țintă: <strong class="text-indigo-600">${targetW ? targetW + 'g' : 'Nespecificat'}</strong></div>
+          </div>
+          <span class="px-3 py-1 bg-indigo-100 group-hover:bg-indigo-600 text-indigo-800 group-hover:text-white font-extrabold text-[11px] rounded-lg transition shadow-sm flex items-center gap-1">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> Alege
+          </span>
+        `;
+        btn.onclick = function() {
+          window.associateEanToExistingProduct(name, targetW);
+        };
+        container.appendChild(btn);
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.filterMapEanProducts = function() {
+      const input = document.getElementById('mapEanSearchInput');
+      window.renderMapEanProductList(input ? input.value : '');
+    };
+
+    window.associateEanToExistingProduct = function(productName, targetWeight) {
+      if (!window.pendingScannedEan) return;
+      const ean = window.pendingScannedEan;
+
+      window.barcodeCatalog[ean] = {
+        name: productName,
+        targetWeight: targetWeight || window.targetWeight
+      };
+
+      window.saveBarcodeCatalog();
+      window.renderBarcodeCatalog();
+
+      const inputSampleName = document.getElementById('inputSampleName');
+      if (inputSampleName) inputSampleName.value = productName;
+      if (targetWeight) window.setBaseTarget(targetWeight);
+
+      window.closeMapEanModal();
+      window.showToast(`Codul ${ean} a fost asociat cu succes la "${productName}"!`);
+      window.playConfirmSound();
+    };
+
+    window.createProductFromMapModal = function() {
+      const ean = window.pendingScannedEan;
+      window.closeMapEanModal();
+      window.closeCatalogModal();
+      const inputSampleName = document.getElementById('inputSampleName');
+      if (inputSampleName) {
+        inputSampleName.value = ean;
+        inputSampleName.focus();
+      }
+      window.pendingBarcodeToMap = ean;
+      window.showToast(`Tastează numele dorit pentru codul ${ean} și apasă Adaugă Proba.`, "info");
+    };
 
     window.showToast = function(msg, type = "success") {
       const toast = document.getElementById('toastNotification');
@@ -600,45 +786,157 @@
     };
 
     window.renderBarcodeCatalog = function() {
-      const tbody = document.getElementById('catalogTableBody');
+      const container = document.getElementById('catalogGroupedContainer');
       const emptyState = document.getElementById('catalogEmptyState');
-      if (!tbody) return;
+      const datalist = document.getElementById('existingProductsList');
+      if (!container) return;
 
-      tbody.innerHTML = '';
+      container.innerHTML = '';
+      if (datalist) datalist.innerHTML = '';
+
       const keys = Object.keys(window.barcodeCatalog);
 
       if (keys.length === 0) {
         if (emptyState) emptyState.classList.remove('hidden');
-      } else {
-        if (emptyState) emptyState.classList.add('hidden');
-        keys.forEach(code => {
-          const item = window.barcodeCatalog[code];
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
-          tr.innerHTML = `
-            <td class="py-2 px-3 font-mono text-[11px] font-bold text-indigo-900">${code}</td>
-            <td class="py-2 px-3 font-semibold text-slate-800">${item.name}</td>
-            <td class="py-2 px-3 text-right font-bold text-slate-600">${item.targetWeight ? item.targetWeight + 'g' : '-'}</td>
-            <td class="py-2 px-3 text-center">
-              <button onclick="window.deleteBarcodeMapping('${code}')" class="text-slate-300 hover:text-red-600 transition p-1">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+        return;
+      }
+      if (emptyState) emptyState.classList.add('hidden');
+
+      // Grupare pe nume de produs
+      const grouped = {};
+      keys.forEach(ean => {
+        const item = window.barcodeCatalog[ean];
+        const name = item.name || 'Produs fără nume';
+        if (!grouped[name]) {
+          grouped[name] = {
+            targetWeight: item.targetWeight || null,
+            eans: []
+          };
+        }
+        grouped[name].eans.push(ean);
+        if (!grouped[name].targetWeight && item.targetWeight) {
+          grouped[name].targetWeight = item.targetWeight;
+        }
+      });
+
+      // Populeaza lista de sugestii
+      if (datalist) {
+        Object.keys(grouped).forEach(prodName => {
+          const opt = document.createElement('option');
+          opt.value = prodName;
+          datalist.appendChild(opt);
         });
       }
+
+      // Randare card-uri pe fiecare produs cu mai multe coduri
+      Object.keys(grouped).forEach(prodName => {
+        const prod = grouped[prodName];
+        const card = document.createElement('div');
+        card.className = "bg-white border border-slate-200 rounded-xl p-3 shadow-sm";
+
+        const topDiv = document.createElement('div');
+        topDiv.className = "flex justify-between items-start mb-2";
+
+        const titleBox = document.createElement('div');
+        titleBox.innerHTML = `<h4 class="font-extrabold text-sm text-slate-800">${prodName}</h4>
+          <span class="text-xs text-slate-500 font-semibold">Țintă: <strong class="text-indigo-700">${prod.targetWeight ? prod.targetWeight + 'g' : 'Nespecificat'}</strong></span>`;
+
+        const addEanBtn = document.createElement('button');
+        addEanBtn.className = "px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-md text-[11px] font-bold border border-indigo-200 transition flex items-center gap-1";
+        addEanBtn.innerHTML = `<i data-lucide="plus" class="w-3 h-3"></i> Adaugă EAN`;
+        addEanBtn.onclick = function() {
+          window.quickAddEanToProduct(prodName, prod.targetWeight);
+        };
+
+        topDiv.appendChild(titleBox);
+        topDiv.appendChild(addEanBtn);
+
+        const subLabel = document.createElement('div');
+        subLabel.className = "text-[11px] text-slate-400 mb-1.5 font-semibold uppercase tracking-wider flex items-center justify-between";
+        subLabel.innerHTML = `<span>Coduri EAN / Furnizori (${prod.eans.length}):</span>`;
+
+        const badgesWrap = document.createElement('div');
+        badgesWrap.className = "flex flex-wrap gap-1.5";
+
+        prod.eans.forEach(code => {
+          const badge = document.createElement('span');
+          badge.className = "inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-indigo-950 font-mono font-bold text-xs rounded-lg border border-slate-200";
+          badge.innerHTML = `<i data-lucide="barcode" class="w-3.5 h-3.5 text-indigo-600"></i> <span>${code}</span>`;
+
+          const delBtn = document.createElement('button');
+          delBtn.className = "text-slate-400 hover:text-red-600 transition ml-1 p-0.5";
+          delBtn.title = "Șterge acest cod EAN";
+          delBtn.innerHTML = `<i data-lucide="x" class="w-3 h-3"></i>`;
+          delBtn.onclick = function() {
+            window.deleteBarcodeMapping(code);
+          };
+
+          badge.appendChild(delBtn);
+          badgesWrap.appendChild(badge);
+        });
+
+        card.appendChild(topDiv);
+        card.appendChild(subLabel);
+        card.appendChild(badgesWrap);
+
+        container.appendChild(card);
+      });
+
       if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.quickAddEanToProduct = function(prodName, targetWeight) {
+      const catInputName = document.getElementById('catInputName');
+      const catInputWeight = document.getElementById('catInputWeight');
+      const catInputEan = document.getElementById('catInputEan');
+
+      if (catInputName) catInputName.value = prodName;
+      if (catInputWeight) catInputWeight.value = targetWeight || '';
+      if (catInputEan) {
+        catInputEan.value = '';
+        catInputEan.focus();
+      }
+
+      window.showToast(`Scrie noul cod EAN pentru "${prodName}" și apasă Salvează!`, "info");
+    };
+
+    window.addManualCatalogMapping = function() {
+      const catInputName = document.getElementById('catInputName');
+      const catInputEan = document.getElementById('catInputEan');
+      const catInputWeight = document.getElementById('catInputWeight');
+
+      const name = catInputName ? catInputName.value.trim() : '';
+      const eanStr = catInputEan ? catInputEan.value.trim() : '';
+      const weight = catInputWeight ? parseFloat(catInputWeight.value) : null;
+
+      if (!name || !eanStr) {
+        window.showToast("Introdu numele produsului și cel puțin un cod EAN!", "error");
+        return;
+      }
+
+      const eanList = eanStr.split(/[\s,]+/).filter(e => e.length > 0);
+
+      eanList.forEach(code => {
+        window.barcodeCatalog[code] = {
+          name: name,
+          targetWeight: weight || window.targetWeight
+        };
+      });
+
+      window.saveBarcodeCatalog();
+      window.renderBarcodeCatalog();
+
+      if (catInputEan) catInputEan.value = '';
+      window.showToast(`Asociat cu succes (${eanList.length} cod(uri) -> ${name})!`);
     };
 
     window.deleteBarcodeMapping = function(code) {
       delete window.barcodeCatalog[code];
       window.saveBarcodeCatalog();
       window.renderBarcodeCatalog();
-      window.showToast(`Asocierea pentru codul ${code} a fost ștearsă.`, "info");
+      window.showToast(`Codul EAN ${code} a fost ștears.`, "info");
     };
 
-    // INTEGRARE SCANER COD DE BARE / QR
     window.openBarcodeScanner = function() {
       const modal = document.getElementById('scannerModal');
       if (!modal) return;
@@ -683,7 +981,6 @@
       const inputSampleName = document.getElementById('inputSampleName');
       const inputLabelWeight = document.getElementById('inputLabelWeight');
 
-      // Detectăm dacă este un cod EAN de cântar cu greutate variabilă (începe cu 20, 21, 22, 23, 24, 28, 29)
       if (/^(20|21|22|23|24|28|29)\d{11}$/.test(cleanText)) {
         const weightPart = parseInt(cleanText.substring(7, 12), 10);
         if (!isNaN(weightPart) && weightPart > 0) {
@@ -711,10 +1008,17 @@
           window.saveUIState();
           window.showToast(`Produs Recunoscut: ${matched.name}`);
         } else {
-          window.pendingBarcodeToMap = cleanText;
-          if (inputSampleName) inputSampleName.value = cleanText;
-          window.saveUIState();
-          window.showToast(`Cod nou: ${cleanText}! Modifică numele și se va reține automat.`, "info");
+          // Cod nou / necunoscut: dacă avem deja produse în catalog, deschidem fereastra de selecție rapidă!
+          if (Object.keys(window.barcodeCatalog).length > 0) {
+            window.closeBarcodeScanner();
+            window.openMapEanModal(cleanText);
+            return;
+          } else {
+            window.pendingBarcodeToMap = cleanText;
+            if (inputSampleName) inputSampleName.value = cleanText;
+            window.saveUIState();
+            window.showToast(`Cod nou: ${cleanText}! Tastează numele și se va salva.`, "info");
+          }
         }
       }
 
@@ -957,6 +1261,7 @@
       }
 
       window.samplesList.push(sample);
+      window.samplesList = window.samplesList;
       window.saveToLocalStorage();
       window.renderTable();
       window.updateStatistics();
@@ -1311,7 +1616,6 @@
       }
     };
 
-    // DOM event listeners
     window.addEventListener('DOMContentLoaded', () => {
       const inputTargetWeight = document.getElementById('inputTargetWeight');
       const inputStep = document.getElementById('inputStep');
@@ -1525,7 +1829,6 @@
       }
     });
 
-    // Wrap save to local storage to sync with Firestore when user is signed in
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
       if (currentUser && !currentUser.isAnonymous) {
