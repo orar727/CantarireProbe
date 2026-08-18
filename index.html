@@ -39,11 +39,12 @@
     #qr-reader video {
       border-radius: 12px;
       object-fit: cover;
+      width: 100% !important;
     }
 
     /* Reguli speciale pentru printare curată */
     @media print {
-      .no-print, header, main, #toastNotification, #confirmModal, #scannerModal { 
+      .no-print, header, main, #toastNotification, #confirmModal, #scannerModal, #catalogModal, #authModal { 
         display: none !important; 
       }
       .print-only { 
@@ -85,13 +86,19 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-3 text-sm">
+      <div class="flex items-center gap-3 text-sm flex-wrap">
         <span id="storageBadge" class="bg-indigo-800 text-indigo-200 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 border border-indigo-700">
           <i data-lucide="database" class="w-3.5 h-3.5"></i>
           <span id="savedCountText">0 probe salvate local</span>
         </span>
 
-        <!-- Badget / Buton Stare Autentificare Cloud -->
+        <!-- Buton Catalog Coduri de Bare Salvate -->
+        <button id="btnOpenCatalogModal" onclick="window.openCatalogModal()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-indigo-700" title="Vezi și gestionează codurile de bare memorate">
+          <i data-lucide="barcode" class="w-3.5 h-3.5 text-indigo-300"></i>
+          <span>Catalog Coduri</span>
+        </button>
+
+        <!-- Stare Autentificare Cloud -->
         <div id="authHeaderWrap">
           <button id="btnOpenAuthModal" onclick="window.openAuthModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
             <i data-lucide="user" class="w-3.5 h-3.5"></i>
@@ -99,7 +106,7 @@
           </button>
         </div>
 
-        <button id="btnToggleSound" onclick="toggleSound()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700" title="Activează/dezactivează sunetul de confirmare">
+        <button id="btnToggleSound" onclick="window.toggleSound()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700" title="Activează/dezactivează sunetul de confirmare">
           <i data-lucide="volume-2" class="w-4 h-4"></i>
         </button>
         <button id="btnResetAll" class="bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
@@ -124,11 +131,11 @@
         </div>
 
         <div class="grid grid-cols-5 gap-2 mb-4">
-          <button onclick="setBaseTarget(100)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">100g</button>
-          <button onclick="setBaseTarget(250)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">250g</button>
-          <button onclick="setBaseTarget(500)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">500g</button>
-          <button onclick="setBaseTarget(1000)" class="preset-btn bg-indigo-100 text-indigo-800 font-bold py-2 rounded-lg text-xs transition border border-indigo-200">1000g</button>
-          <button onclick="setBaseTarget(2000)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">2000g</button>
+          <button onclick="window.setBaseTarget(100)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">100g</button>
+          <button onclick="window.setBaseTarget(250)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">250g</button>
+          <button onclick="window.setBaseTarget(500)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">500g</button>
+          <button onclick="window.setBaseTarget(1000)" class="preset-btn bg-indigo-100 text-indigo-800 font-bold py-2 rounded-lg text-xs transition border border-indigo-200">1000g</button>
+          <button onclick="window.setBaseTarget(2000)" class="preset-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 rounded-lg text-xs transition border border-slate-200">2000g</button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -146,11 +153,11 @@
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">g</span>
             </div>
             <div class="flex gap-1 mt-1.5 flex-wrap">
-              <button type="button" onclick="setStep(1)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">1g</button>
-              <button type="button" onclick="setStep(2)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">2g</button>
-              <button type="button" onclick="setStep(5)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">5g</button>
-              <button type="button" onclick="setStep(10)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">10g</button>
-              <button type="button" onclick="setStep(25)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">25g</button>
+              <button type="button" onclick="window.setStep(1)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">1g</button>
+              <button type="button" onclick="window.setStep(2)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">2g</button>
+              <button type="button" onclick="window.setStep(5)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">5g</button>
+              <button type="button" onclick="window.setStep(10)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">10g</button>
+              <button type="button" onclick="window.setStep(25)" class="px-1.5 py-0.5 text-[10px] bg-slate-200 hover:bg-indigo-100 rounded text-slate-700 font-medium">25g</button>
             </div>
           </div>
           <div>
@@ -180,11 +187,11 @@
           <div class="flex gap-2 items-center">
             <div class="relative flex-1">
               <input type="text" id="inputSampleName" placeholder="Ex: Probă Lapte 1.5% sau PROBA-001..." class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
-              <button onclick="clearSampleName()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+              <button onclick="window.clearSampleName()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
                 <i data-lucide="x-circle" class="w-5 h-5"></i>
               </button>
             </div>
-            <!-- Buton Deschidere Scaner Cod de Bare / QR -->
+            <!-- Buton Scaner -->
             <button type="button" onclick="window.openBarcodeScanner()" class="px-3 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition border border-indigo-200 shadow-sm" title="Scanează Cod de Bare sau QR cu camera">
               <i data-lucide="qr-code" class="w-4 h-4 text-indigo-700"></i>
               <span>Scaner</span>
@@ -193,12 +200,12 @@
 
           <!-- Mod Etichetă Individuală Avansat -->
           <div class="mt-3">
-            <button type="button" id="btnToggleLabelMode" onclick="toggleLabelMode()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300">
+            <button type="button" id="btnToggleLabelMode" onclick="window.toggleLabelMode()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300">
               <i data-lucide="tag" class="w-4 h-4"></i>
               <span id="labelModeBtnText">Activează Mod Etichetă Individuală</span>
             </button>
 
-            <!-- Câmp Gramaj Etichetă cu preseturi rapide, opțiune de păstrare și buton scanare -->
+            <!-- Câmp Gramaj Etichetă -->
             <div id="labelModeFieldWrap" class="hidden mt-2.5 p-3.5 bg-amber-50/80 border border-amber-300 rounded-xl animate-pop">
               <div class="flex justify-between items-center mb-1.5 flex-wrap gap-1">
                 <label for="inputLabelWeight" class="block text-[11px] font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-1">
@@ -222,15 +229,15 @@
               <!-- Comenzi Rapide Gramaj Eticheta -->
               <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[10px]">
                 <span class="text-amber-800 font-bold">Rapid:</span>
-                <button type="button" onclick="setLabelWeightPreset(100)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">100g</button>
-                <button type="button" onclick="setLabelWeightPreset(250)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">250g</button>
-                <button type="button" onclick="setLabelWeightPreset(400)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">400g</button>
-                <button type="button" onclick="setLabelWeightPreset(500)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">500g</button>
-                <button type="button" onclick="setLabelWeightPreset(1000)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">1000g</button>
+                <button type="button" onclick="window.setLabelWeightPreset(100)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">100g</button>
+                <button type="button" onclick="window.setLabelWeightPreset(250)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">250g</button>
+                <button type="button" onclick="window.setLabelWeightPreset(400)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">400g</button>
+                <button type="button" onclick="window.setLabelWeightPreset(500)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">500g</button>
+                <button type="button" onclick="window.setLabelWeightPreset(1000)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">1000g</button>
               </div>
 
               <p class="text-[10px] text-amber-800 font-medium mt-2 leading-relaxed">
-                💡 <strong>Tastatura de mai jos s-a adaptat automat la gramajul etichetei!</strong> Selectează greutatea citită pe cântar. În tabel va apărea: <strong>455g-470g</strong>.
+                💡 Tastatura de mai jos s-a adaptat pe gramajul etichetei! Selectează greutatea citită pe cântar.
               </p>
             </div>
           </div>
@@ -251,13 +258,8 @@
 
         <!-- Tastatura de Butoane Stanga (Minus) | Centru (Tinta) | Dreapta (Plus) -->
         <div class="grid grid-cols-11 gap-2 items-stretch mb-5">
-          
-          <!-- STÂNGA: Butoane Minus -->
-          <div id="containerMinusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2">
-            <!-- Generat dinamic din JS -->
-          </div>
+          <div id="containerMinusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2"></div>
 
-          <!-- CENTRU: Greutatea Tinta Fixa -->
           <div class="col-span-1 flex items-center justify-center">
             <button id="btnExactTarget" class="keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight">
               <span id="targetWeightValueText">1000g</span>
@@ -265,15 +267,11 @@
             </button>
           </div>
 
-          <!-- DREAPTA: Butoane Plus -->
-          <div id="containerPlusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2">
-            <!-- Generat dinamic din JS -->
-          </div>
-
+          <div id="containerPlusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2"></div>
         </div>
 
         <!-- Buton Principal Salvare -->
-        <button id="btnAddSample" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 active:scale-[0.99]">
+        <button id="btnAddSample" onclick="window.addSample()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 active:scale-[0.99]">
           <i data-lucide="plus-circle" class="w-5 h-5"></i>
           <span>ADAUGĂ PROBA ÎN TABEL (Enter)</span>
         </button>
@@ -332,10 +330,10 @@
 
           <!-- Butoane Export -->
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="btnExportClipboard" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-slate-300">
+            <button id="btnExportClipboard" onclick="window.exportClipboard()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-slate-300">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiază
             </button>
-            <button id="btnExportCSV" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+            <button id="btnExportCSV" onclick="window.exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
               <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Excel (CSV)
             </button>
             <button onclick="window.print()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition">
@@ -358,7 +356,7 @@
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
-              <!-- Randurile se insereaza dinamic din JS -->
+              <!-- Randurile se insereaza dinamic -->
             </tbody>
           </table>
 
@@ -403,20 +401,57 @@
         </div>
       </div>
 
-      <!-- Container Vizualizare Cameră Live -->
-      <div id="qr-reader" class="w-full bg-slate-900 rounded-xl overflow-hidden min-h-[260px] border-2 border-indigo-500/30"></div>
+      <div id="qr-reader" class="w-full bg-slate-100 rounded-xl overflow-hidden min-h-[250px]"></div>
 
-      <p class="text-[11px] text-slate-500 mt-3 font-medium">
-        💡 <strong>Sfat:</strong> Recunoaște automat coduri de lot, coduri EAN-13 de magazin și <strong>etichete de cântar (extrage gramajul automat)</strong>!
-      </p>
-      
-      <button onclick="window.closeBarcodeScanner()" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
-        Închide Scanerul
-      </button>
+      <p class="text-[11px] text-slate-400 mt-3">Suportă coduri EAN-13 (magazin & cântar), QR Code, Code 128</p>
     </div>
   </div>
 
-  <!-- Toast Notification Custom -->
+  <!-- MODAL CATALOG CODURI DE BARE MEMORATE -->
+  <div id="catalogModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
+      <button onclick="window.closeCatalogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-3 text-indigo-900">
+        <div class="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+          <i data-lucide="barcode" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base">Catalog Coduri de Bare Mappings</h3>
+          <p class="text-xs text-slate-500">Produse asociate automat prin scanare</p>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-xl my-2">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider z-10">
+            <tr>
+              <th class="py-2.5 px-3">Cod de Bare</th>
+              <th class="py-2.5 px-3">Nume Produs Asociat</th>
+              <th class="py-2.5 px-3 text-right">Țintă (g)</th>
+              <th class="py-2.5 px-3 text-center w-10">Șterge</th>
+            </tr>
+          </thead>
+          <tbody id="catalogTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
+        </table>
+        <div id="catalogEmptyState" class="py-8 text-center text-slate-400">
+          <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-1 text-slate-300"></i>
+          <p class="text-xs font-semibold text-slate-500">Nu ai asocieri salvate încă.</p>
+          <p class="text-[11px]">Scanează un cod nou și salvează proba pentru a-l înregistra.</p>
+        </div>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="window.closeCatalogModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-xl text-xs transition">
+          Închide
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
   <div id="toastNotification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-200 z-50 pointer-events-none">
     <div id="toastIcon" class="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
       <i data-lucide="check" class="w-4 h-4"></i>
@@ -424,7 +459,7 @@
     <span id="toastMessage" class="text-xs font-semibold">Acțiune efectuată cu succes!</span>
   </div>
 
-  <!-- Modal Confirmare Personalizat -->
+  <!-- Modal Confirmare Ștergere -->
   <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 text-center">
       <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -433,7 +468,7 @@
       <h3 class="font-bold text-slate-800 text-base mb-1">Ștergi toate probele?</h3>
       <p class="text-xs text-slate-500 mb-5">Această acțiune va șterge întreaga listă actuală din tabel și din memoria browserului.</p>
       <div class="flex gap-2">
-        <button id="btnCancelModal" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition">Anulează</button>
+        <button id="btnCancelModal" onclick="window.closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition">Anulează</button>
         <button id="btnConfirmModal" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-md shadow-red-200">Șterge Tot</button>
       </div>
     </div>
@@ -491,10 +526,857 @@
     </div>
   </div>
 
+  <script>
+    // Global App State bound to window scope for ES modules access
+    window.targetWeight = 1000;
+    window.selectedWeight = 1000;
+    window.step = 5;
+    window.buttonCountPerSide = 6;
+    window.samplesList = [];
+    window.barcodeCatalog = {};
+    window.pendingBarcodeToMap = null;
+    window.sampleCounter = 1;
+    window.labelModeActive = false;
+    window.soundMode = 'full'; 
+    window.audioCtx = null;
+    window.html5QrCodeInstance = null;
+
+    window.showToast = function(msg, type = "success") {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+      if (!toast || !toastMsg || !toastIcon) return;
+
+      toastMsg.innerText = msg;
+      
+      if (type === "error") {
+        toastIcon.className = "p-1 rounded-full bg-rose-500/20 text-rose-400";
+        toastIcon.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i>`;
+      } else if (type === "info") {
+        toastIcon.className = "p-1 rounded-full bg-blue-500/20 text-blue-400";
+        toastIcon.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i>`;
+      } else {
+        toastIcon.className = "p-1 rounded-full bg-emerald-500/20 text-emerald-400";
+        toastIcon.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
+      }
+
+      if (window.lucide) window.lucide.createIcons();
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    };
+
+    window.loadBarcodeCatalog = function() {
+      const data = localStorage.getItem('lab_barcode_catalog');
+      if (data) {
+        try {
+          window.barcodeCatalog = JSON.parse(data);
+        } catch (e) {
+          console.error(e);
+          window.barcodeCatalog = {};
+        }
+      }
+    };
+
+    window.saveBarcodeCatalog = function() {
+      localStorage.setItem('lab_barcode_catalog', JSON.stringify(window.barcodeCatalog));
+    };
+
+    window.openCatalogModal = function() {
+      window.renderBarcodeCatalog();
+      const modal = document.getElementById('catalogModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeCatalogModal = function() {
+      const modal = document.getElementById('catalogModal');
+      if (!modal) return;
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    };
+
+    window.renderBarcodeCatalog = function() {
+      const tbody = document.getElementById('catalogTableBody');
+      const emptyState = document.getElementById('catalogEmptyState');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      const keys = Object.keys(window.barcodeCatalog);
+
+      if (keys.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+      } else {
+        if (emptyState) emptyState.classList.add('hidden');
+        keys.forEach(code => {
+          const item = window.barcodeCatalog[code];
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+          tr.innerHTML = `
+            <td class="py-2 px-3 font-mono text-[11px] font-bold text-indigo-900">${code}</td>
+            <td class="py-2 px-3 font-semibold text-slate-800">${item.name}</td>
+            <td class="py-2 px-3 text-right font-bold text-slate-600">${item.targetWeight ? item.targetWeight + 'g' : '-'}</td>
+            <td class="py-2 px-3 text-center">
+              <button onclick="window.deleteBarcodeMapping('${code}')" class="text-slate-300 hover:text-red-600 transition p-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.deleteBarcodeMapping = function(code) {
+      delete window.barcodeCatalog[code];
+      window.saveBarcodeCatalog();
+      window.renderBarcodeCatalog();
+      window.showToast(`Asocierea pentru codul ${code} a fost ștearsă.`, "info");
+    };
+
+    // INTEGRARE SCANER COD DE BARE / QR
+    window.openBarcodeScanner = function() {
+      const modal = document.getElementById('scannerModal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+
+      if (window.html5QrCodeInstance) {
+        try { window.html5QrCodeInstance.clear(); } catch(e){}
+      }
+
+      window.html5QrCodeInstance = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 180 } };
+
+      window.html5QrCodeInstance.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess
+      ).catch(err => {
+        console.error("Eroare camera scaner:", err);
+        window.showToast("Nu s-a putut accesa camera pentru scanare.", "error");
+        window.closeBarcodeScanner();
+      });
+    };
+
+    window.closeBarcodeScanner = function() {
+      const modal = document.getElementById('scannerModal');
+      if (modal) {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+      }
+      if (window.html5QrCodeInstance) {
+        window.html5QrCodeInstance.stop().then(() => {
+          window.html5QrCodeInstance.clear();
+        }).catch(() => {});
+      }
+    };
+
+    function onScanSuccess(decodedText) {
+      window.playConfirmSound();
+      const cleanText = decodedText.trim();
+      let extractedWeight = null;
+      const inputSampleName = document.getElementById('inputSampleName');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+
+      // Detectăm dacă este un cod EAN de cântar cu greutate variabilă (începe cu 20, 21, 22, 23, 24, 28, 29)
+      if (/^(20|21|22|23|24|28|29)\d{11}$/.test(cleanText)) {
+        const weightPart = parseInt(cleanText.substring(7, 12), 10);
+        if (!isNaN(weightPart) && weightPart > 0) {
+          extractedWeight = weightPart;
+        }
+      }
+
+      if (extractedWeight) {
+        if (!window.labelModeActive) {
+          window.toggleLabelMode();
+        }
+        if (inputLabelWeight) {
+          inputLabelWeight.value = extractedWeight;
+          window.updateKeypad();
+        }
+        window.showToast(`EAN Cântar detectat! Gramaj etichetă: ${extractedWeight}g`);
+      } else {
+        if (window.barcodeCatalog[cleanText]) {
+          const matched = window.barcodeCatalog[cleanText];
+          if (inputSampleName) inputSampleName.value = matched.name;
+          window.pendingBarcodeToMap = null;
+          if (matched.targetWeight) {
+            window.setBaseTarget(matched.targetWeight);
+          }
+          window.saveUIState();
+          window.showToast(`Produs Recunoscut: ${matched.name}`);
+        } else {
+          window.pendingBarcodeToMap = cleanText;
+          if (inputSampleName) inputSampleName.value = cleanText;
+          window.saveUIState();
+          window.showToast(`Cod nou: ${cleanText}! Modifică numele și se va reține automat.`, "info");
+        }
+      }
+
+      window.closeBarcodeScanner();
+    }
+
+    window.toggleLabelMode = function() {
+      window.labelModeActive = !window.labelModeActive;
+      const labelModeFieldWrap = document.getElementById('labelModeFieldWrap');
+      const btnToggleLabelMode = document.getElementById('btnToggleLabelMode');
+      const labelModeBtnText = document.getElementById('labelModeBtnText');
+      const displayCardWrap = document.getElementById('displayCardWrap');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+
+      if (window.labelModeActive) {
+        if (labelModeFieldWrap) labelModeFieldWrap.classList.remove('hidden');
+        if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition bg-amber-500 text-white border border-amber-600 shadow-md";
+        if (labelModeBtnText) labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (Apasă pentru dezactivare)";
+        if (displayCardWrap) displayCardWrap.className = "bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-2xl p-5 text-center text-white mb-5 shadow-lg relative overflow-hidden transition-all border border-amber-500/40";
+        if (inputLabelWeight) inputLabelWeight.focus();
+      } else {
+        if (labelModeFieldWrap) labelModeFieldWrap.classList.add('hidden');
+        if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300";
+        if (labelModeBtnText) labelModeBtnText.innerText = "Activează Mod Etichetă Individuală";
+        if (displayCardWrap) displayCardWrap.className = "bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all";
+        if (inputLabelWeight) inputLabelWeight.value = '';
+      }
+
+      window.updateKeypad();
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.setLabelWeightPreset = function(val) {
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+      if (!inputLabelWeight) return;
+      inputLabelWeight.value = val;
+      window.updateKeypad();
+    };
+
+    window.setBaseTarget = function(val) {
+      window.targetWeight = val;
+      const inputTargetWeight = document.getElementById('inputTargetWeight');
+      if (inputTargetWeight) inputTargetWeight.value = val;
+      window.updateKeypad();
+    };
+
+    window.setStep = function(val) {
+      window.step = val;
+      const inputStep = document.getElementById('inputStep');
+      if (inputStep) inputStep.value = val;
+      window.updateKeypad();
+    };
+
+    window.clearSampleName = function() {
+      const inputSampleName = document.getElementById('inputSampleName');
+      if (inputSampleName) {
+        inputSampleName.value = '';
+        inputSampleName.focus();
+      }
+      window.saveUIState();
+    };
+
+    window.updateKeypad = function() {
+      const inputTargetWeight = document.getElementById('inputTargetWeight');
+      const inputStep = document.getElementById('inputStep');
+      const selectButtonCount = document.getElementById('selectButtonCount');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const targetWeightValueText = document.getElementById('targetWeightValueText');
+      const containerMinusButtons = document.getElementById('containerMinusButtons');
+      const containerPlusButtons = document.getElementById('containerPlusButtons');
+      const btnExactTarget = document.getElementById('btnExactTarget');
+
+      window.step = parseFloat(inputStep ? inputStep.value : 5) || 5;
+      window.buttonCountPerSide = parseInt(selectButtonCount ? selectButtonCount.value : 6) || 6;
+
+      let currentBaseWeight = parseFloat(inputTargetWeight ? inputTargetWeight.value : 1000) || 1000;
+      let isUsingLabelBase = false;
+
+      if (window.labelModeActive && inputLabelWeight && inputLabelWeight.value.trim() !== '') {
+        const parsedLabel = parseFloat(inputLabelWeight.value);
+        if (!isNaN(parsedLabel) && parsedLabel > 0) {
+          currentBaseWeight = parsedLabel;
+          isUsingLabelBase = true;
+        }
+      }
+
+      window.targetWeight = currentBaseWeight;
+
+      if (targetWeightValueText) {
+        targetWeightValueText.innerText = `${window.targetWeight}g`;
+      }
+
+      if (containerMinusButtons) {
+        containerMinusButtons.innerHTML = '';
+        for (let i = window.buttonCountPerSide; i >= 1; i--) {
+          const offset = Math.round(i * window.step * 100) / 100;
+          const val = Math.round((window.targetWeight - offset) * 100) / 100;
+          const btn = document.createElement('button');
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
+          btn.onclick = () => window.setSelectedWeight(val);
+          containerMinusButtons.appendChild(btn);
+        }
+      }
+
+      if (containerPlusButtons) {
+        containerPlusButtons.innerHTML = '';
+        for (let i = 1; i <= window.buttonCountPerSide; i++) {
+          const offset = Math.round(i * window.step * 100) / 100;
+          const val = Math.round((window.targetWeight + offset) * 100) / 100;
+          const btn = document.createElement('button');
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
+          btn.onclick = () => window.setSelectedWeight(val);
+          containerPlusButtons.appendChild(btn);
+        }
+      }
+
+      if (btnExactTarget) {
+        if (isUsingLabelBase) {
+          btnExactTarget.className = "keypad-btn w-full h-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-amber-200 border border-amber-500 text-center leading-tight";
+        } else {
+          btnExactTarget.className = "keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight";
+        }
+      }
+
+      window.setSelectedWeight(window.targetWeight);
+    };
+
+    window.setSelectedWeight = function(val) {
+      window.selectedWeight = val;
+      const displayLabelHeader = document.getElementById('displayLabelHeader');
+      const displaySelectedWeight = document.getElementById('displaySelectedWeight');
+      const displayDifferenceBadge = document.getElementById('displayDifferenceBadge');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+
+      if (window.labelModeActive) {
+        const labelWeightVal = parseFloat(inputLabelWeight ? inputLabelWeight.value : 0) || 0;
+        if (displayLabelHeader) displayLabelHeader.innerText = "Măsurare: Etichetă ➔ Cântar";
+        if (displaySelectedWeight) {
+          displaySelectedWeight.innerHTML = `<span class="text-amber-300 font-extrabold text-3xl sm:text-4xl">${labelWeightVal}g</span> <span class="text-xs text-amber-200/80">etichetă</span> ➔ <span class="text-white text-4xl sm:text-5xl font-black">${window.selectedWeight}</span><span class="text-2xl font-bold text-amber-300">g</span>`;
+        }
+
+        const labelDiff = window.selectedWeight - labelWeightVal;
+        if (displayDifferenceBadge) {
+          if (labelDiff === 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere etichetă: 0 g (Conform)`;
+          } else if (labelDiff > 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere etichetă: +${labelDiff} g`;
+          } else {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere etichetă: ${labelDiff} g`;
+          }
+        }
+
+      } else {
+        if (displayLabelHeader) displayLabelHeader.innerText = "Greutate de Înregistrat";
+        if (displaySelectedWeight) {
+          displaySelectedWeight.innerHTML = `${window.selectedWeight} <span class="text-2xl font-bold text-indigo-300">g</span>`;
+        }
+
+        const diff = window.selectedWeight - window.targetWeight;
+        if (displayDifferenceBadge) {
+          if (diff === 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere: 0 g (Fix)`;
+          } else if (diff > 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere: +${diff} g`;
+          } else {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere: ${diff} g`;
+          }
+        }
+      }
+
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.addSample = function() {
+      const inputSampleName = document.getElementById('inputSampleName');
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const checkKeepLabelWeight = document.getElementById('checkKeepLabelWeight');
+
+      let name = inputSampleName ? inputSampleName.value.trim() : '';
+      if (!name) {
+        name = `PROBA-${window.sampleCounter}`;
+      }
+
+      if (window.pendingBarcodeToMap) {
+        let cleanBaseName = name;
+        if (checkAutoIncrement && checkAutoIncrement.checked) {
+          const match = name.match(/^(.*?)([\s\-_]*\d+)$/);
+          if (match && match[1].trim().length > 0) {
+            cleanBaseName = match[1].trim();
+          }
+        }
+        window.barcodeCatalog[window.pendingBarcodeToMap] = {
+          name: cleanBaseName,
+          targetWeight: window.targetWeight
+        };
+        window.saveBarcodeCatalog();
+        window.showToast(`Codul ${window.pendingBarcodeToMap} a fost asociat cu "${cleanBaseName}"!`);
+        window.pendingBarcodeToMap = null;
+      }
+
+      let sample;
+
+      if (window.labelModeActive) {
+        const labelWeight = parseFloat(inputLabelWeight ? inputLabelWeight.value : NaN);
+        if (isNaN(labelWeight)) {
+          window.showToast("Introdu gramajul de pe etichetă!", "error");
+          if (inputLabelWeight) inputLabelWeight.focus();
+          return;
+        }
+        sample = {
+          id: Date.now(),
+          name: name,
+          targetWeight: labelWeight,
+          actualWeight: window.selectedWeight,
+          diff: window.selectedWeight - labelWeight,
+          isLabelMode: true
+        };
+      } else {
+        sample = {
+          id: Date.now(),
+          name: name,
+          targetWeight: window.targetWeight,
+          actualWeight: window.selectedWeight,
+          diff: window.selectedWeight - window.targetWeight,
+          isLabelMode: false
+        };
+      }
+
+      window.samplesList.push(sample);
+      window.saveToLocalStorage();
+      window.renderTable();
+      window.updateStatistics();
+      window.showToast(`Adăugat: ${name} (${window.selectedWeight}g)`);
+      window.playConfirmSound();
+
+      if (checkAutoIncrement && checkAutoIncrement.checked) {
+        const match = name.match(/^(.*?)([\s\-_]*)(\d+)$/);
+        if (match) {
+          const base = match[1];
+          const sep = match[2];
+          const num = parseInt(match[3]) + 1;
+          const padLen = match[3].length;
+          if (inputSampleName) inputSampleName.value = `${base}${sep}${String(num).padStart(padLen, '0')}`;
+        } else {
+          if (inputSampleName) inputSampleName.value = `${name} 2`;
+        }
+      }
+
+      if (window.labelModeActive && inputLabelWeight) {
+        if (!checkKeepLabelWeight || !checkKeepLabelWeight.checked) {
+          inputLabelWeight.value = '';
+        }
+        inputLabelWeight.focus();
+      }
+
+      window.saveUIState();
+    };
+
+    window.getGroupedFormattedLines = function() {
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const autoInc = checkAutoIncrement ? checkAutoIncrement.checked : true;
+      const groups = {};
+      const order = [];
+
+      window.samplesList.forEach(sample => {
+        let name = sample.name.trim();
+        let key = name;
+        
+        if (autoInc) {
+          const match = name.match(/^(.*?)([\s\-_]*\d+)$/);
+          if (match && match[1].trim().length > 0) {
+            key = match[1].trim();
+          }
+        }
+
+        if (!groups[key]) {
+          groups[key] = [];
+          order.push(key);
+        }
+
+        if (sample.isLabelMode) {
+          groups[key].push(`${sample.targetWeight}g-${sample.actualWeight}g`);
+        } else {
+          groups[key].push(`${sample.actualWeight}g`);
+        }
+      });
+
+      return order.map(key => `${key}, ${groups[key].join(', ')}`);
+    };
+
+    window.renderTable = function() {
+      const tableBody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+      const printSimpleList = document.getElementById('printSimpleList');
+      const previewGroupedText = document.getElementById('previewGroupedText');
+      const savedCountText = document.getElementById('savedCountText');
+      if (!tableBody) return;
+
+      tableBody.innerHTML = '';
+      if (printSimpleList) printSimpleList.innerHTML = '';
+
+      const groupedLines = window.getGroupedFormattedLines();
+
+      if (previewGroupedText) {
+        previewGroupedText.innerText = groupedLines.length > 0 ? groupedLines.join('\n') : '(Nicio probă adăugată)';
+      }
+
+      if (window.samplesList.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+      } else {
+        if (emptyState) emptyState.classList.add('hidden');
+        
+        window.samplesList.forEach((sample, index) => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100 animate-pop";
+          
+          const diffBadge = sample.diff === 0 
+            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0g</span>`
+            : sample.diff > 0 
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">+${sample.diff}g</span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${sample.diff}g</span>`;
+
+          const nameCell = sample.isLabelMode
+            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>`
+            : sample.name;
+
+          const targetCell = sample.isLabelMode
+            ? `<span title="Gramaj etichetă">${sample.targetWeight}g</span>`
+            : `${sample.targetWeight}g`;
+
+          tr.innerHTML = `
+            <td class="py-2.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
+            <td class="py-2.5 px-3 font-bold text-slate-800">${nameCell}</td>
+            <td class="py-2.5 px-3 text-right font-semibold text-slate-500">${targetCell}</td>
+            <td class="py-2.5 px-3 text-right font-black text-indigo-900 text-sm">${sample.actualWeight}g</td>
+            <td class="py-2.5 px-3 text-center">${diffBadge}</td>
+            <td class="py-2.5 px-3 text-center no-print">
+              <button onclick="window.deleteSample(${sample.id})" class="text-slate-300 hover:text-red-600 transition p-1">
+                <i data-lucide="trash" class="w-4 h-4"></i>
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        if (printSimpleList) {
+          groupedLines.forEach(line => {
+            const printDiv = document.createElement('div');
+            printDiv.className = "print-item py-2 border-b border-slate-300 font-semibold text-slate-900 text-lg";
+            printDiv.innerText = line;
+            printSimpleList.appendChild(printDiv);
+          });
+        }
+      }
+
+      if (savedCountText) savedCountText.innerText = `${window.samplesList.length} probe salvate local`;
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.deleteSample = function(id) {
+      window.samplesList = window.samplesList.filter(s => s.id !== id);
+      window.saveToLocalStorage();
+      window.renderTable();
+      window.updateStatistics();
+      window.showToast("Proba a fost ștearsă", "info");
+    };
+
+    window.updateStatistics = function() {
+      const statTotalCount = document.getElementById('statTotalCount');
+      const statAverageWeight = document.getElementById('statAverageWeight');
+      const statAverageDiff = document.getElementById('statAverageDiff');
+
+      const total = window.samplesList.length;
+      if (statTotalCount) statTotalCount.innerText = total;
+
+      if (total === 0) {
+        if (statAverageWeight) statAverageWeight.innerText = "0g";
+        if (statAverageDiff) statAverageDiff.innerText = "0g";
+        return;
+      }
+
+      const sumWeight = window.samplesList.reduce((acc, curr) => acc + curr.actualWeight, 0);
+      const avgWeight = (sumWeight / total).toFixed(1);
+      if (statAverageWeight) statAverageWeight.innerText = `${avgWeight}g`;
+
+      const sumDiff = window.samplesList.reduce((acc, curr) => acc + curr.diff, 0);
+      const avgDiff = (sumDiff / total).toFixed(1);
+      if (statAverageDiff) statAverageDiff.innerText = `${avgDiff > 0 ? '+' : ''}${avgDiff}g`;
+    };
+
+    window.saveToLocalStorage = function() {
+      localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
+    };
+
+    window.saveUIState = function() {
+      const inputSampleName = document.getElementById('inputSampleName');
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+
+      const state = {
+        sampleName: inputSampleName ? inputSampleName.value : '',
+        autoIncrement: checkAutoIncrement ? checkAutoIncrement.checked : true,
+        soundMode: window.soundMode
+      };
+      localStorage.setItem('lab_ui_state', JSON.stringify(state));
+    };
+
+    window.loadUIState = function() {
+      const data = localStorage.getItem('lab_ui_state');
+      if (data) {
+        try {
+          const state = JSON.parse(data);
+          const inputSampleName = document.getElementById('inputSampleName');
+          const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+
+          if (inputSampleName && typeof state.sampleName === 'string') {
+            inputSampleName.value = state.sampleName;
+          }
+          if (checkAutoIncrement && typeof state.autoIncrement === 'boolean') {
+            checkAutoIncrement.checked = state.autoIncrement;
+          }
+          if (typeof state.soundMode === 'string') {
+            window.soundMode = state.soundMode;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      window.updateSoundButton();
+    };
+
+    window.updateSoundButton = function() {
+      const btn = document.getElementById('btnToggleSound');
+      if (!btn) return;
+
+      if (window.soundMode === 'full') {
+        btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4"></i>`;
+        btn.className = "bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700";
+        btn.title = "Sunet + vibrație la salvare (click: doar vibrație)";
+      } else if (window.soundMode === 'vibrate') {
+        btn.innerHTML = `<i data-lucide="vibrate" class="w-4 h-4"></i>`;
+        btn.className = "bg-amber-700 hover:bg-amber-600 text-amber-100 p-2 rounded-lg transition border border-amber-600";
+        btn.title = "Doar vibrație la salvare (click: silențios)";
+      } else {
+        btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i>`;
+        btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition border border-slate-600";
+        btn.title = "Silențios (click: sunet + vibrație)";
+      }
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    window.toggleSound = function() {
+      if (window.soundMode === 'full') {
+        window.soundMode = 'vibrate';
+      } else if (window.soundMode === 'vibrate') {
+        window.soundMode = 'silent';
+      } else {
+        window.soundMode = 'full';
+      }
+      window.updateSoundButton();
+      window.saveUIState();
+      window.playConfirmSound();
+    };
+
+    window.playConfirmSound = function() {
+      if (window.soundMode === 'silent') return;
+
+      if (window.soundMode === 'full') {
+        try {
+          if (!window.audioCtx) {
+            window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (window.audioCtx.state === 'suspended') {
+            window.audioCtx.resume();
+          }
+
+          const now = window.audioCtx.currentTime;
+          const notes = [
+            { freq: 880, start: 0, dur: 0.09 },
+            { freq: 1200, start: 0.1, dur: 0.12 }
+          ];
+
+          notes.forEach(note => {
+            const osc = window.audioCtx.createOscillator();
+            const gain = window.audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note.freq, now + note.start);
+            gain.gain.setValueAtTime(0, now + note.start);
+            gain.gain.linearRampToValueAtTime(0.25, now + note.start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + note.start + note.dur);
+            osc.connect(gain);
+            gain.connect(window.audioCtx.destination);
+            osc.start(now + note.start);
+            osc.stop(now + note.start + note.dur + 0.02);
+          });
+        } catch (e) {
+          console.error('Eroare audio:', e);
+        }
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate(60);
+      }
+    };
+
+    window.loadFromLocalStorage = function() {
+      const data = localStorage.getItem('lab_samples_data');
+      if (data) {
+        try {
+          window.samplesList = JSON.parse(data);
+          window.samplesList.forEach(s => {
+            const match = s.name.match(/PROBA-(\d+)/);
+            if (match) {
+              const num = parseInt(match[1]);
+              if (num >= window.sampleCounter) window.sampleCounter = num + 1;
+            }
+          });
+          window.renderTable();
+          window.updateStatistics();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+
+    window.exportCSV = function() {
+      if (window.samplesList.length === 0) {
+        window.showToast("Tabelul este gol! Adaugă probe mai întâi.", "error");
+        return;
+      }
+
+      const lines = window.getGroupedFormattedLines();
+      const csvContent = "\uFEFF" + lines.join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Comanda_Probe_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      window.showToast("Fișier CSV descărcat cu succes!");
+    };
+
+    window.exportClipboard = function() {
+      if (window.samplesList.length === 0) {
+        window.showToast("Nu există probe de copiat!", "error");
+        return;
+      }
+
+      const lines = window.getGroupedFormattedLines();
+      const textContent = lines.join('\n');
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = textContent;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          window.showToast("Datele au fost copiate! Apasă Ctrl+V.");
+        } else {
+          window.showToast("Nu s-a putut copia textul", "error");
+        }
+      } catch (err) {
+        window.showToast("Eroare la copiere!", "error");
+      }
+      
+      document.body.removeChild(textarea);
+    };
+
+    window.closeConfirmModal = function() {
+      const confirmModal = document.getElementById('confirmModal');
+      if (confirmModal) {
+        confirmModal.classList.add('opacity-0');
+        setTimeout(() => confirmModal.classList.add('hidden'), 200);
+      }
+    };
+
+    // DOM event listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      const inputTargetWeight = document.getElementById('inputTargetWeight');
+      const inputStep = document.getElementById('inputStep');
+      const selectButtonCount = document.getElementById('selectButtonCount');
+      const btnExactTarget = document.getElementById('btnExactTarget');
+      const btnResetAll = document.getElementById('btnResetAll');
+      const confirmModal = document.getElementById('confirmModal');
+      const btnConfirmModal = document.getElementById('btnConfirmModal');
+
+      if (btnExactTarget) {
+        btnExactTarget.addEventListener('click', () => window.setSelectedWeight(window.targetWeight));
+      }
+      if (inputTargetWeight) inputTargetWeight.addEventListener('input', window.updateKeypad);
+      if (inputStep) inputStep.addEventListener('input', window.updateKeypad);
+      if (selectButtonCount) selectButtonCount.addEventListener('change', window.updateKeypad);
+
+      if (btnResetAll) {
+        btnResetAll.addEventListener('click', () => {
+          if (window.samplesList.length === 0) {
+            window.showToast("Tabelul este deja gol.", "info");
+            return;
+          }
+          if (confirmModal) {
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
+          }
+        });
+      }
+
+      if (btnConfirmModal) {
+        btnConfirmModal.addEventListener('click', () => {
+          window.samplesList = [];
+          window.sampleCounter = 1;
+          window.saveToLocalStorage();
+          window.renderTable();
+          window.updateStatistics();
+          window.closeConfirmModal();
+          window.showToast("Toate datele au fost șterse.", "info");
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.activeElement !== btnResetAll) {
+          e.preventDefault();
+          window.addSample();
+        }
+      });
+
+      const inputSampleName = document.getElementById('inputSampleName');
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+
+      if (inputSampleName) inputSampleName.addEventListener('input', window.saveUIState);
+      if (checkAutoIncrement) checkAutoIncrement.addEventListener('change', window.saveUIState);
+
+      window.updateKeypad();
+      window.loadBarcodeCatalog();
+      window.loadFromLocalStorage();
+      window.loadUIState();
+    });
+  </script>
+
   <!-- FIREBASE CLOUD ENGINE INTEGRATION -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'asistent-cantarire-probe';
@@ -528,11 +1410,13 @@
     const authHeaderBtnText = document.getElementById('authHeaderBtnText');
 
     window.openAuthModal = () => {
+      if (!authModal) return;
       authModal.classList.remove('hidden');
       setTimeout(() => authModal.classList.remove('opacity-0'), 10);
     };
 
     window.closeAuthModal = () => {
+      if (!authModal) return;
       authModal.classList.add('opacity-0');
       setTimeout(() => authModal.classList.add('hidden'), 200);
       if (authErrorMessage) authErrorMessage.classList.add('hidden');
@@ -561,7 +1445,7 @@
       try {
         await signInWithEmailAndPassword(auth, email, password);
         window.closeAuthModal();
-        showToast("Conectat cu succes în Cloud!");
+        window.showToast("Conectat cu succes în Cloud!");
       } catch (err) {
         showAuthError("Nume de utilizator sau parolă incorectă!");
       }
@@ -577,7 +1461,7 @@
       try {
         await createUserWithEmailAndPassword(auth, email, password);
         window.closeAuthModal();
-        showToast("Cont creat cu succes în Cloud!");
+        window.showToast("Cont creat cu succes în Cloud!");
       } catch (err) {
         if (err.code === 'auth/email-already-in-use') {
           showAuthError("Acest nume de utilizator este deja folosit!");
@@ -593,7 +1477,7 @@
       try {
         await signOut(auth);
         window.closeAuthModal();
-        showToast("Te-ai deconectat. Mod vizitator activ.", "info");
+        window.showToast("Te-ai deconectat. Mod vizitator activ.", "info");
       } catch (err) {
         console.error(err);
       }
@@ -618,14 +1502,14 @@
         const userSamplesCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'samples');
         
         unsubscribeFirestore = onSnapshot(userSamplesCollection, (snapshot) => {
-          samplesList = [];
+          window.samplesList = [];
           snapshot.forEach(docSnap => {
-            samplesList.push(docSnap.data());
+            window.samplesList.push(docSnap.data());
           });
 
-          samplesList.sort((a, b) => a.id - b.id);
-          renderTable();
-          updateStatistics();
+          window.samplesList.sort((a, b) => a.id - b.id);
+          window.renderTable();
+          window.updateStatistics();
         }, (err) => {
           console.error("Eroare la sincronizarea din Cloud:", err);
         });
@@ -635,16 +1519,17 @@
         if (authFormSection) authFormSection.classList.remove('hidden');
         if (userInfoSection) userInfoSection.classList.add('hidden');
 
-        samplesList = [];
-        renderTable();
-        updateStatistics();
+        window.samplesList = [];
+        window.renderTable();
+        window.updateStatistics();
       }
     });
 
+    // Wrap save to local storage to sync with Firestore when user is signed in
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
       if (currentUser && !currentUser.isAnonymous) {
-        samplesList.forEach(sample => {
+        window.samplesList.forEach(sample => {
           const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
           setDoc(sampleDocRef, sample).catch(err => console.error(err));
         });
@@ -666,751 +1551,13 @@
     if (confirmModalConfirmBtn) {
       confirmModalConfirmBtn.addEventListener('click', () => {
         if (currentUser && !currentUser.isAnonymous) {
-          samplesList.forEach(sample => {
+          window.samplesList.forEach(sample => {
             const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
             deleteDoc(sampleDocRef).catch(err => console.error(err));
           });
         }
       });
     }
-  </script>
-
-  <script>
-    let targetWeight = 1000;
-    let selectedWeight = 1000;
-    let step = 5;
-    let buttonCountPerSide = 6;
-    let samplesList = [];
-    let sampleCounter = 1;
-    let labelModeActive = false;
-    let soundMode = 'full'; 
-    let audioCtx = null;
-    let html5QrCodeInstance = null;
-
-    const inputTargetWeight = document.getElementById('inputTargetWeight');
-    const inputStep = document.getElementById('inputStep');
-    const selectButtonCount = document.getElementById('selectButtonCount');
-    const inputSampleName = document.getElementById('inputSampleName');
-    const checkAutoIncrement = document.getElementById('checkAutoIncrement');
-    const displaySelectedWeight = document.getElementById('displaySelectedWeight');
-    const displayDifferenceBadge = document.getElementById('displayDifferenceBadge');
-    const displayCardWrap = document.getElementById('displayCardWrap');
-    const displayLabelHeader = document.getElementById('displayLabelHeader');
-    const containerMinusButtons = document.getElementById('containerMinusButtons');
-    const containerPlusButtons = document.getElementById('containerPlusButtons');
-    const btnExactTarget = document.getElementById('btnExactTarget');
-    const targetWeightValueText = document.getElementById('targetWeightValueText');
-    const tableBody = document.getElementById('tableBody');
-    const emptyState = document.getElementById('emptyState');
-    const savedCountText = document.getElementById('savedCountText');
-    const statTotalCount = document.getElementById('statTotalCount');
-    const statAverageWeight = document.getElementById('statAverageWeight');
-    const statAverageDiff = document.getElementById('statAverageDiff');
-    const previewGroupedText = document.getElementById('previewGroupedText');
-    const btnToggleLabelMode = document.getElementById('btnToggleLabelMode');
-    const labelModeFieldWrap = document.getElementById('labelModeFieldWrap');
-    const labelModeBtnText = document.getElementById('labelModeBtnText');
-    const inputLabelWeight = document.getElementById('inputLabelWeight');
-    const checkKeepLabelWeight = document.getElementById('checkKeepLabelWeight');
-
-    // INTEGRARE SCANER COD DE BARE / QR
-    window.openBarcodeScanner = function() {
-      const scannerModal = document.getElementById('scannerModal');
-      scannerModal.classList.remove('hidden');
-      setTimeout(() => scannerModal.classList.remove('opacity-0'), 10);
-
-      if (typeof Html5Qrcode === 'undefined') {
-        showToast("Se încarcă modulul de scanare...", "info");
-        return;
-      }
-
-      if (!html5QrCodeInstance) {
-        html5QrCodeInstance = new Html5Qrcode("qr-reader");
-      }
-
-      const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 180 },
-        aspectRatio: 1.0
-      };
-
-      html5QrCodeInstance.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess,
-        (errorMessage) => {}
-      ).catch(err => {
-        console.error("Eroare la pornirea camerei pentru scanare:", err);
-        showToast("Permiteți accesul la cameră pentru scanare!", "error");
-      });
-    };
-
-    window.closeBarcodeScanner = function() {
-      const scannerModal = document.getElementById('scannerModal');
-      scannerModal.classList.add('opacity-0');
-      setTimeout(() => scannerModal.classList.add('hidden'), 200);
-
-      if (html5QrCodeInstance && html5QrCodeInstance.isScanning) {
-        html5QrCodeInstance.stop().then(() => {
-          html5QrCodeInstance.clear();
-        }).catch(err => console.error(err));
-      }
-    };
-
-    function onScanSuccess(decodedText, decodedResult) {
-      playConfirmSound();
-      const cleanText = decodedText.trim();
-      let extractedWeight = null;
-
-      // Detectăm dacă este un cod EAN de cântar cu greutate variabilă (începe cu 20, 21, 22, 23, 24, 28, 29)
-      if (/^(20|21|22|23|24|28|29)\d{11}$/.test(cleanText)) {
-        // Cifrele 7-11 indică gramajul extras de pe etichetă
-        const weightPart = parseInt(cleanText.substring(7, 12), 10);
-        if (!isNaN(weightPart) && weightPart > 0) {
-          extractedWeight = weightPart;
-        }
-      }
-
-      if (extractedWeight) {
-        if (!labelModeActive) {
-          toggleLabelMode();
-        }
-        if (inputLabelWeight) {
-          inputLabelWeight.value = extractedWeight;
-          updateKeypad();
-        }
-        showToast(`EAN Cântar detectat! Gramaj etichetă: ${extractedWeight}g`);
-      } else {
-        inputSampleName.value = cleanText;
-        saveUIState();
-        showToast(`Cod scanat cu succes: ${cleanText}`);
-      }
-
-      window.closeBarcodeScanner();
-    }
-
-    // Activați sau dezactivați modul Etichetă Individuală
-    function toggleLabelMode() {
-      labelModeActive = !labelModeActive;
-
-      if (labelModeActive) {
-        labelModeFieldWrap.classList.remove('hidden');
-        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition bg-amber-500 text-white border border-amber-600 shadow-md";
-        labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (Apasă pentru dezactivare)";
-        displayCardWrap.className = "bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-2xl p-5 text-center text-white mb-5 shadow-lg relative overflow-hidden transition-all border border-amber-500/40";
-        if (inputLabelWeight) {
-          inputLabelWeight.focus();
-        }
-      } else {
-        labelModeFieldWrap.classList.add('hidden');
-        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300";
-        labelModeBtnText.innerText = "Activează Mod Etichetă Individuală";
-        displayCardWrap.className = "bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all";
-        if (inputLabelWeight) inputLabelWeight.value = '';
-      }
-
-      updateKeypad();
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function setLabelWeightPreset(val) {
-      if (!inputLabelWeight) return;
-      inputLabelWeight.value = val;
-      updateKeypad();
-    }
-
-    function setBaseTarget(val) {
-      targetWeight = val;
-      inputTargetWeight.value = val;
-      updateKeypad();
-    }
-
-    function setStep(val) {
-      step = val;
-      if (inputStep) inputStep.value = val;
-      updateKeypad();
-    }
-
-    function clearSampleName() {
-      inputSampleName.value = '';
-      inputSampleName.focus();
-      saveUIState();
-    }
-
-    function updateKeypad() {
-      step = parseFloat(inputStep.value) || 5;
-      buttonCountPerSide = parseInt(selectButtonCount.value) || 6;
-
-      let currentBaseWeight = parseFloat(inputTargetWeight.value) || 1000;
-      let isUsingLabelBase = false;
-
-      if (labelModeActive && inputLabelWeight && inputLabelWeight.value.trim() !== '') {
-        const parsedLabel = parseFloat(inputLabelWeight.value);
-        if (!isNaN(parsedLabel) && parsedLabel > 0) {
-          currentBaseWeight = parsedLabel;
-          isUsingLabelBase = true;
-        }
-      }
-
-      targetWeight = currentBaseWeight;
-
-      if (targetWeightValueText) {
-        targetWeightValueText.innerText = `${targetWeight}g`;
-      }
-
-      if (containerMinusButtons) {
-        containerMinusButtons.innerHTML = '';
-        for (let i = buttonCountPerSide; i >= 1; i--) {
-          const offset = Math.round(i * step * 100) / 100;
-          const val = Math.round((targetWeight - offset) * 100) / 100;
-          const btn = document.createElement('button');
-          btn.className = isUsingLabelBase 
-            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
-            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
-          btn.onclick = () => setSelectedWeight(val);
-          containerMinusButtons.appendChild(btn);
-        }
-      }
-
-      if (containerPlusButtons) {
-        containerPlusButtons.innerHTML = '';
-        for (let i = 1; i <= buttonCountPerSide; i++) {
-          const offset = Math.round(i * step * 100) / 100;
-          const val = Math.round((targetWeight + offset) * 100) / 100;
-          const btn = document.createElement('button');
-          btn.className = isUsingLabelBase 
-            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
-            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
-          btn.onclick = () => setSelectedWeight(val);
-          containerPlusButtons.appendChild(btn);
-        }
-      }
-
-      if (btnExactTarget) {
-        if (isUsingLabelBase) {
-          btnExactTarget.className = "keypad-btn w-full h-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-amber-200 border border-amber-500 text-center leading-tight";
-        } else {
-          btnExactTarget.className = "keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight";
-        }
-      }
-
-      setSelectedWeight(targetWeight);
-    }
-
-    function setSelectedWeight(val) {
-      selectedWeight = val;
-
-      if (labelModeActive) {
-        const labelWeightVal = parseFloat(inputLabelWeight.value) || 0;
-        if (displayLabelHeader) displayLabelHeader.innerText = "Măsurare: Etichetă ➔ Cântar";
-        if (displaySelectedWeight) {
-          displaySelectedWeight.innerHTML = `<span class="text-amber-300 font-extrabold text-3xl sm:text-4xl">${labelWeightVal}g</span> <span class="text-xs text-amber-200/80">etichetă</span> ➔ <span class="text-white text-4xl sm:text-5xl font-black">${selectedWeight}</span><span class="text-2xl font-bold text-amber-300">g</span>`;
-        }
-
-        const labelDiff = selectedWeight - labelWeightVal;
-        if (displayDifferenceBadge) {
-          if (labelDiff === 0) {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere etichetă: 0 g (Conform)`;
-          } else if (labelDiff > 0) {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere etichetă: +${labelDiff} g`;
-          } else {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere etichetă: ${labelDiff} g`;
-          }
-        }
-
-      } else {
-        if (displayLabelHeader) displayLabelHeader.innerText = "Greutate de Înregistrat";
-        if (displaySelectedWeight) {
-          displaySelectedWeight.innerHTML = `${selectedWeight} <span class="text-2xl font-bold text-indigo-300">g</span>`;
-        }
-
-        const diff = selectedWeight - targetWeight;
-        if (displayDifferenceBadge) {
-          if (diff === 0) {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere: 0 g (Fix)`;
-          } else if (diff > 0) {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere: +${diff} g`;
-          } else {
-            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30";
-            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere: ${diff} g`;
-          }
-        }
-      }
-
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function addSample() {
-      let name = inputSampleName.value.trim();
-      if (!name) {
-        name = `PROBA-${sampleCounter}`;
-      }
-
-      let sample;
-
-      if (labelModeActive) {
-        const labelWeight = parseFloat(inputLabelWeight.value);
-        if (isNaN(labelWeight) || labelWeight <= 0) {
-          showToast("Introduceți un gramaj valid de pe etichetă!", "error");
-          inputLabelWeight.focus();
-          return;
-        }
-        sample = {
-          id: Date.now(),
-          name: name,
-          targetWeight: labelWeight,
-          actualWeight: selectedWeight,
-          diff: selectedWeight - labelWeight,
-          isLabelMode: true
-        };
-      } else {
-        sample = {
-          id: Date.now(),
-          name: name,
-          targetWeight: targetWeight,
-          actualWeight: selectedWeight,
-          diff: selectedWeight - targetWeight
-        };
-      }
-
-      samplesList.push(sample);
-      saveToLocalStorage();
-      renderTable();
-      updateStatistics();
-      showToast(`Adăugat: ${name} (${sample.isLabelMode ? `${sample.targetWeight}g-` : ''}${selectedWeight}g)`);
-      playConfirmSound();
-
-      if (checkAutoIncrement.checked) {
-        const match = name.match(/^(.*?)([\s\-_]*)(\d+)$/);
-        if (match) {
-          const base = match[1];
-          const sep = match[2];
-          const num = parseInt(match[3]) + 1;
-          const padLen = match[3].length;
-          inputSampleName.value = `${base}${sep}${String(num).padStart(padLen, '0')}`;
-        } else {
-          inputSampleName.value = `${name} 2`;
-        }
-      }
-
-      if (labelModeActive && inputLabelWeight) {
-        if (!checkKeepLabelWeight.checked) {
-          inputLabelWeight.value = '';
-        }
-        inputLabelWeight.focus();
-        updateKeypad();
-      }
-
-      saveUIState();
-    }
-
-    function getGroupedFormattedLines() {
-      const groups = {};
-      const order = [];
-
-      samplesList.forEach(sample => {
-        let name = sample.name.trim();
-        let key = name;
-        
-        if (checkAutoIncrement.checked) {
-          const match = name.match(/^(.*?)([\s\-_]*\d+)$/);
-          if (match && match[1].trim().length > 0) {
-            key = match[1].trim();
-          }
-        }
-
-        if (!groups[key]) {
-          groups[key] = [];
-          order.push(key);
-        }
-
-        if (sample.isLabelMode) {
-          groups[key].push(`${sample.targetWeight}g-${sample.actualWeight}g`);
-        } else {
-          groups[key].push(`${sample.actualWeight}g`);
-        }
-      });
-
-      return order.map(key => `${key}, ${groups[key].join(', ')}`);
-    }
-
-    function renderTable() {
-      tableBody.innerHTML = '';
-      const printSimpleList = document.getElementById('printSimpleList');
-      if (printSimpleList) printSimpleList.innerHTML = '';
-
-      const groupedLines = getGroupedFormattedLines();
-
-      if (previewGroupedText) {
-        previewGroupedText.innerText = groupedLines.length > 0 ? groupedLines.join('\n') : '(Nicio probă adăugată)';
-      }
-
-      if (samplesList.length === 0) {
-        emptyState.classList.remove('hidden');
-      } else {
-        emptyState.classList.add('hidden');
-        
-        samplesList.forEach((sample, index) => {
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition border-b border-slate-100 animate-pop";
-          
-          const diffBadge = sample.diff === 0 
-            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0g</span>`
-            : sample.diff > 0 
-              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">+${sample.diff}g</span>`
-              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${sample.diff}g</span>`;
-
-          const nameCell = sample.isLabelMode
-            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>`
-            : sample.name;
-
-          const targetCell = sample.isLabelMode
-            ? `<span class="font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="Gramaj etichetă">${sample.targetWeight}g</span>`
-            : `${sample.targetWeight}g`;
-
-          const actualCell = sample.isLabelMode
-            ? `<span class="font-black text-slate-900">${sample.actualWeight}g</span> <span class="text-[10px] text-slate-400 font-mono">(${sample.targetWeight}-${sample.actualWeight})</span>`
-            : `<span class="font-black text-indigo-900 text-sm">${sample.actualWeight}g</span>`;
-
-          tr.innerHTML = `
-            <td class="py-2.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
-            <td class="py-2.5 px-3 font-bold text-slate-800">${nameCell}</td>
-            <td class="py-2.5 px-3 text-right font-semibold text-slate-600">${targetCell}</td>
-            <td class="py-2.5 px-3 text-right">${actualCell}</td>
-            <td class="py-2.5 px-3 text-center">${diffBadge}</td>
-            <td class="py-2.5 px-3 text-center no-print">
-              <button onclick="deleteSample(${sample.id})" class="text-slate-300 hover:text-red-600 transition p-1">
-                <i data-lucide="trash" class="w-4 h-4"></i>
-              </button>
-            </td>
-          `;
-          tableBody.appendChild(tr);
-        });
-
-        if (printSimpleList) {
-          groupedLines.forEach(line => {
-            const printDiv = document.createElement('div');
-            printDiv.className = "print-item py-2 border-b border-slate-300 font-semibold text-slate-900 text-lg";
-            printDiv.innerText = line;
-            printSimpleList.appendChild(printDiv);
-          });
-        }
-      }
-
-      savedCountText.innerText = `${samplesList.length} probe salvate local`;
-      lucide.createIcons();
-    }
-
-    function deleteSample(id) {
-      samplesList = samplesList.filter(s => s.id !== id);
-      saveToLocalStorage();
-      renderTable();
-      updateStatistics();
-      showToast("Proba a fost ștearsă", "info");
-    }
-
-    function updateStatistics() {
-      const total = samplesList.length;
-      statTotalCount.innerText = total;
-
-      if (total === 0) {
-        statAverageWeight.innerText = "0g";
-        statAverageDiff.innerText = "0g";
-        return;
-      }
-
-      const sumWeight = samplesList.reduce((acc, curr) => acc + curr.actualWeight, 0);
-      const avgWeight = (sumWeight / total).toFixed(1);
-      statAverageWeight.innerText = `${avgWeight}g`;
-
-      const sumDiff = samplesList.reduce((acc, curr) => acc + curr.diff, 0);
-      const avgDiff = (sumDiff / total).toFixed(1);
-      statAverageDiff.innerText = `${avgDiff > 0 ? '+' : ''}${avgDiff}g`;
-    }
-
-    function saveToLocalStorage() {
-      localStorage.setItem('lab_samples_data', JSON.stringify(samplesList));
-    }
-
-    function saveUIState() {
-      const state = {
-        sampleName: inputSampleName.value,
-        autoIncrement: checkAutoIncrement.checked,
-        soundMode: soundMode,
-        labelModeActive: labelModeActive,
-        labelWeight: inputLabelWeight ? inputLabelWeight.value : '',
-        keepLabelWeight: checkKeepLabelWeight ? checkKeepLabelWeight.checked : false
-      };
-      localStorage.setItem('lab_ui_state', JSON.stringify(state));
-    }
-
-    function loadUIState() {
-      const data = localStorage.getItem('lab_ui_state');
-      if (data) {
-        try {
-          const state = JSON.parse(data);
-          if (typeof state.sampleName === 'string') {
-            inputSampleName.value = state.sampleName;
-          }
-          if (typeof state.autoIncrement === 'boolean') {
-            checkAutoIncrement.checked = state.autoIncrement;
-          }
-          if (typeof state.soundMode === 'string') {
-            soundMode = state.soundMode;
-          }
-          if (typeof state.keepLabelWeight === 'boolean' && checkKeepLabelWeight) {
-            checkKeepLabelWeight.checked = state.keepLabelWeight;
-          }
-          if (state.labelModeActive && !labelModeActive) {
-            if (typeof state.labelWeight === 'string' && inputLabelWeight) {
-              inputLabelWeight.value = state.labelWeight;
-            }
-            toggleLabelMode();
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      updateSoundButton();
-    }
-
-    function updateSoundButton() {
-      const btn = document.getElementById('btnToggleSound');
-      if (!btn) return;
-
-      if (soundMode === 'full') {
-        btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4"></i>`;
-        btn.className = "bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700";
-        btn.title = "Sunet + vibrație la salvare (click: doar vibrație)";
-      } else if (soundMode === 'vibrate') {
-        btn.innerHTML = `<i data-lucide="vibrate" class="w-4 h-4"></i>`;
-        btn.className = "bg-amber-700 hover:bg-amber-600 text-amber-100 p-2 rounded-lg transition border border-amber-600";
-        btn.title = "Doar vibrație la salvare (click: silențios)";
-      } else {
-        btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i>`;
-        btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition border border-slate-600";
-        btn.title = "Silențios, fără sunet și fără vibrație (click: sunet + vibrație)";
-      }
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function toggleSound() {
-      if (soundMode === 'full') {
-        soundMode = 'vibrate';
-      } else if (soundMode === 'vibrate') {
-        soundMode = 'silent';
-      } else {
-        soundMode = 'full';
-      }
-      updateSoundButton();
-      saveUIState();
-      playConfirmSound();
-    }
-
-    function playConfirmSound() {
-      if (soundMode === 'silent') return;
-
-      if (soundMode === 'full') {
-        try {
-          if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          }
-          if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-          }
-
-          const now = audioCtx.currentTime;
-          const notes = [
-            { freq: 880, start: 0, dur: 0.09 },
-            { freq: 1200, start: 0.1, dur: 0.12 }
-          ];
-
-          notes.forEach(note => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(note.freq, now + note.start);
-            gain.gain.setValueAtTime(0, now + note.start);
-            gain.gain.linearRampToValueAtTime(0.25, now + note.start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + note.start + note.dur);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + note.start);
-            osc.stop(now + note.start + note.dur + 0.02);
-          });
-        } catch (e) {
-          console.error('Nu s-a putut reda sunetul:', e);
-        }
-      }
-
-      if (navigator.vibrate) {
-        navigator.vibrate(60);
-      }
-    }
-
-    function loadFromLocalStorage() {
-      const data = localStorage.getItem('lab_samples_data');
-      if (data) {
-        try {
-          samplesList = JSON.parse(data);
-          samplesList.forEach(s => {
-            const match = s.name.match(/PROBA-(\d+)/);
-            if (match) {
-              const num = parseInt(match[1]);
-              if (num >= sampleCounter) sampleCounter = num + 1;
-            }
-          });
-          renderTable();
-          updateStatistics();
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-
-    document.getElementById('btnExportCSV').addEventListener('click', () => {
-      if (samplesList.length === 0) {
-        showToast("Tabelul este gol! Adaugă probe mai întâi.", "error");
-        return;
-      }
-
-      const lines = getGroupedFormattedLines();
-      const csvContent = "\uFEFF" + lines.join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Comanda_Probe_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      showToast("Fișier CSV descărcat cu succes!");
-    });
-
-    document.getElementById('btnExportClipboard').addEventListener('click', () => {
-      if (samplesList.length === 0) {
-        showToast("Nu există probe de copiat!", "error");
-        return;
-      }
-
-      const lines = getGroupedFormattedLines();
-      const textContent = lines.join('\n');
-      copyToClipboardText(textContent);
-    });
-
-    function copyToClipboardText(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      
-      try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-          showToast("Datele au fost copiate! Apasă Ctrl+V.");
-        } else {
-          showToast("Nu s-a putut copia textul", "error");
-        }
-      } catch (err) {
-        showToast("Eroare la copiere!", "error");
-      }
-      
-      document.body.removeChild(textarea);
-    }
-
-    const confirmModal = document.getElementById('confirmModal');
-    document.getElementById('btnResetAll').addEventListener('click', () => {
-      if (samplesList.length === 0) {
-        showToast("Tabelul este deja gol.", "info");
-        return;
-      }
-      confirmModal.classList.remove('hidden');
-      setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
-    });
-
-    document.getElementById('btnCancelModal').addEventListener('click', closeModal);
-    document.getElementById('btnConfirmModal').addEventListener('click', () => {
-      samplesList = [];
-      sampleCounter = 1;
-      saveToLocalStorage();
-      renderTable();
-      updateStatistics();
-      closeModal();
-      showToast("Toate datele au fost șterse.", "info");
-    });
-
-    function closeModal() {
-      confirmModal.classList.add('opacity-0');
-      setTimeout(() => confirmModal.classList.add('hidden'), 200);
-    }
-
-    function showToast(msg, type = "success") {
-      const toast = document.getElementById('toastNotification');
-      const toastMsg = document.getElementById('toastMessage');
-      const toastIcon = document.getElementById('toastIcon');
-
-      toastMsg.innerText = msg;
-      
-      if (type === "error") {
-        toastIcon.className = "p-1 rounded-full bg-rose-500/20 text-rose-400";
-        toastIcon.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i>`;
-      } else if (type === "info") {
-        toastIcon.className = "p-1 rounded-full bg-blue-500/20 text-blue-400";
-        toastIcon.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i>`;
-      } else {
-        toastIcon.className = "p-1 rounded-full bg-emerald-500/20 text-emerald-400";
-        toastIcon.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
-      }
-
-      lucide.createIcons();
-
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 2500);
-    }
-
-    btnExactTarget.addEventListener('click', () => setSelectedWeight(targetWeight));
-    inputTargetWeight.addEventListener('input', updateKeypad);
-    inputStep.addEventListener('input', updateKeypad);
-    selectButtonCount.addEventListener('change', updateKeypad);
-    document.getElementById('btnAddSample').addEventListener('click', addSample);
-
-    if (inputLabelWeight) {
-      inputLabelWeight.addEventListener('input', () => {
-        updateKeypad();
-        saveUIState();
-      });
-    }
-
-    if (checkKeepLabelWeight) {
-      checkKeepLabelWeight.addEventListener('change', saveUIState);
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && document.activeElement !== document.getElementById('btnResetAll')) {
-        e.preventDefault();
-        addSample();
-      }
-    });
-
-    inputSampleName.addEventListener('input', saveUIState);
-    checkAutoIncrement.addEventListener('change', saveUIState);
-
-    updateKeypad();
-    loadFromLocalStorage();
-    loadUIState();
   </script>
 </body>
 </html>
