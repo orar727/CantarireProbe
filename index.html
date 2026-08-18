@@ -84,6 +84,15 @@
           <i data-lucide="database" class="w-3.5 h-3.5"></i>
           <span id="savedCountText">0 probe salvate local</span>
         </span>
+
+        <!-- Badget / Buton Stare Autentificare Cloud -->
+        <div id="authHeaderWrap">
+          <button id="btnOpenAuthModal" onclick="window.openAuthModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span id="authHeaderBtnText">Conectare / Cont</span>
+          </button>
+        </div>
+
         <button id="btnToggleSound" onclick="toggleSound()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700" title="Activează/dezactivează sunetul de confirmare">
           <i data-lucide="volume-2" class="w-4 h-4"></i>
         </button>
@@ -504,6 +513,250 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL AUTENTIFICARE CLOUD (LOGARE / INREGISTRARE) -->
+  <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-left relative">
+      <button onclick="window.closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Stare: Deconectat (Formular Autentificare) -->
+      <div id="authFormSection">
+        <div class="flex items-center gap-2 mb-2 text-indigo-900">
+          <i data-lucide="cloud" class="w-6 h-6 text-indigo-600"></i>
+          <h3 class="font-black text-lg">Cont Cloud Sincronizat</h3>
+        </div>
+        <p class="text-xs text-slate-500 mb-4">Autentifică-te pentru a vedea probele de pe telefon direct pe calculator în timp real!</p>
+
+        <div id="authErrorMessage" class="hidden mb-3 p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs font-semibold"></div>
+
+        <form id="authForm" onsubmit="event.preventDefault();" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Nume Utilizator (Username)</label>
+            <input type="text" id="authUsername" required placeholder="Ex: marian" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Parolă</label>
+            <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+
+          <div class="pt-2 flex gap-2">
+            <button type="button" onclick="window.handleLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow">
+              Intră în Cont
+            </button>
+            <button type="button" onclick="window.handleRegister()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs transition border border-slate-300">
+              Creează Cont
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Stare: Conectat (Detalii Cont & Deconectare) -->
+      <div id="userInfoSection" class="hidden text-center py-2">
+        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-base mb-1">Ești conectat în Cloud</h3>
+        <p id="userEmailDisplay" class="text-xs font-semibold text-indigo-600 mb-4 truncate px-2 bg-indigo-50 py-1 rounded-lg border border-indigo-100"></p>
+        <p class="text-[11px] text-slate-500 mb-5">Probele cântărite se salvează și se sincronizează automat între toate dispozitivele tale.</p>
+        <button onclick="window.handleLogout()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-md shadow-rose-200 flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-4 h-4"></i> Deconectează-mă
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FIRBASE CLOUD ENGINE INTEGRATION -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'asistent-cantarire-probe';
+    const firebaseConfig = typeof __firebase_config !== 'undefined'
+      ? JSON.parse(__firebase_config)
+      : {
+          apiKey: "AIzaSyD15S33f08uCwywQBHuFp0Y1GCMEMpnBwY",
+          authDomain: "cantarire-probe-lab.firebaseapp.com",
+          projectId: "cantarire-probe-lab",
+          storageBucket: "cantarire-probe-lab.firebasestorage.app",
+          messagingSenderId: "394365424669",
+          appId: "1:394365424669:web:c88aa24c37a81f6dbaa2f4"
+        };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let unsubscribeFirestore = null;
+    let currentUser = null;
+
+    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+      signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
+    }
+
+    const authModal = document.getElementById('authModal');
+    const authFormSection = document.getElementById('authFormSection');
+    const userInfoSection = document.getElementById('userInfoSection');
+    const userEmailDisplay = document.getElementById('userEmailDisplay');
+    const authErrorMessage = document.getElementById('authErrorMessage');
+    const authHeaderBtnText = document.getElementById('authHeaderBtnText');
+
+    window.openAuthModal = () => {
+      authModal.classList.remove('hidden');
+      setTimeout(() => authModal.classList.remove('opacity-0'), 10);
+    };
+
+    window.closeAuthModal = () => {
+      authModal.classList.add('opacity-0');
+      setTimeout(() => authModal.classList.add('hidden'), 200);
+      if (authErrorMessage) authErrorMessage.classList.add('hidden');
+    };
+
+    function showAuthError(msg) {
+      if (authErrorMessage) {
+        authErrorMessage.innerText = msg;
+        authErrorMessage.classList.remove('hidden');
+      }
+    }
+
+    // Funcție ajutătoare care transformă un username simplu într-o adresă internă validă pentru Firebase
+    function formatUsernameToEmail(username) {
+      const clean = username.trim().toLowerCase().replace(/\s+/g, '');
+      if (clean.includes('@')) return clean;
+      return `${clean}@laborator.local`;
+    }
+
+    // Autentificare Utilizator cu Username
+    window.handleLogin = async () => {
+      const usernameInput = document.getElementById('authUsername').value.trim();
+      const password = document.getElementById('authPassword').value;
+      if (!usernameInput || !password) return showAuthError("Introduceți numele de utilizator și parola!");
+
+      const email = formatUsernameToEmail(usernameInput);
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.closeAuthModal();
+        showToast("Conectat cu succes în Cloud!");
+      } catch (err) {
+        showAuthError("Nume de utilizator sau parolă incorectă!");
+      }
+    };
+
+    window.handleRegister = async () => {
+      const usernameInput = document.getElementById('authUsername').value.trim();
+      const password = document.getElementById('authPassword').value;
+      if (!usernameInput || !password) return showAuthError("Introduceți un nume de utilizator și o parolă de minim 6 caractere!");
+
+      const email = formatUsernameToEmail(usernameInput);
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        window.closeAuthModal();
+        showToast("Cont creat cu succes în Cloud!");
+      } catch (err) {
+        if (err.code === 'auth/email-already-in-use') {
+          showAuthError("Acest nume de utilizator este deja folosit!");
+        } else if (err.code === 'auth/weak-password') {
+          showAuthError("Parola trebuie să aibă minim 6 caractere!");
+        } else {
+          showAuthError(err.message || "Eroare la crearea contului.");
+        }
+      }
+    };
+
+    window.handleLogout = async () => {
+      try {
+        await signOut(auth);
+        window.closeAuthModal();
+        showToast("Te-ai deconectat. Mod vizitator activ.", "info");
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    // Ascultător Stare Autentificare
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+        unsubscribeFirestore = null;
+      }
+
+      if (user && !user.isAnonymous) {
+        const rawEmail = user.email || '';
+        const displayName = rawEmail ? rawEmail.split('@')[0] : 'Cont Conectat';
+        if (authHeaderBtnText) authHeaderBtnText.innerText = displayName;
+        if (userEmailDisplay) userEmailDisplay.innerText = `Utilizator: ${displayName}`;
+        if (authFormSection) authFormSection.classList.add('hidden');
+        if (userInfoSection) userInfoSection.classList.remove('hidden');
+
+        const userSamplesCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'samples');
+        
+        unsubscribeFirestore = onSnapshot(userSamplesCollection, (snapshot) => {
+          samplesList = [];
+          snapshot.forEach(docSnap => {
+            samplesList.push(docSnap.data());
+          });
+
+          samplesList.sort((a, b) => a.id - b.id);
+          renderTable();
+          updateStatistics();
+        }, (err) => {
+          console.error("Eroare la sincronizarea din Cloud:", err);
+        });
+
+      } else {
+        if (authHeaderBtnText) authHeaderBtnText.innerText = "Conectare / Cont";
+        if (authFormSection) authFormSection.classList.remove('hidden');
+        if (userInfoSection) userInfoSection.classList.add('hidden');
+
+        samplesList = [];
+        renderTable();
+        updateStatistics();
+      }
+    });
+
+    // Suprascriem funcțiile globale de salvare/ștergere pentru a le trimite direct în Cloud Firestore când userul e logat
+    const originalSaveToLocalStorage = window.saveToLocalStorage;
+    window.saveToLocalStorage = function() {
+      if (currentUser && !currentUser.isAnonymous) {
+        // Când utilizatorul adaugă sau șterge o probă, o trimitem în Cloud Firestore
+        samplesList.forEach(sample => {
+          const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
+          setDoc(sampleDocRef, sample).catch(err => console.error(err));
+        });
+      } else {
+        originalSaveToLocalStorage();
+      }
+    };
+
+    const originalDeleteSample = window.deleteSample;
+    window.deleteSample = function(id) {
+      if (currentUser && !currentUser.isAnonymous) {
+        const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', id.toString());
+        deleteDoc(sampleDocRef).catch(err => console.error(err));
+      }
+      originalDeleteSample(id);
+    };
+
+    const confirmModalConfirmBtn = document.getElementById('btnConfirmModal');
+    if (confirmModalConfirmBtn) {
+      const originalConfirmHandler = confirmModalConfirmBtn.onclick;
+      confirmModalConfirmBtn.addEventListener('click', () => {
+        if (currentUser && !currentUser.isAnonymous) {
+          samplesList.forEach(sample => {
+            const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
+            deleteDoc(sampleDocRef).catch(err => console.error(err));
+          });
+        }
+      });
+    }
+  </script>
 
   <script>
     let targetWeight = 1000;
