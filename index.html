@@ -8,8 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- JSZip pentru descarcarea in masa a pozelor comprimate -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -57,13 +55,13 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-  <!-- Zona exclusivă pentru printare curată (Doar Titlu + Lista Probe și Gramaje) -->
+  <!-- Zona exclusivă pentru printare curată -->
   <div id="printArea" class="hidden print-only p-8 max-w-2xl mx-auto">
     <h1 id="printMainTitle" class="text-2xl font-bold border-b-2 border-slate-800 pb-3 mb-6 text-slate-900">
       Raport Cântărire Probe
     </h1>
     <div id="printSimpleList" class="space-y-3 font-semibold text-lg">
-      <!-- Se populează dinamic doar cu Nume Produs și Gramaj -->
+      <!-- Se populează dinamic -->
     </div>
   </div>
 
@@ -103,18 +101,6 @@
     </div>
   </header>
 
-  <!-- Tab-uri navigare intre Cantarire si Comprimare Poze -->
-  <div class="bg-white border-b border-slate-200 no-print">
-    <div class="max-w-7xl mx-auto px-4 flex gap-1">
-      <button id="tabBtnWeigh" onclick="switchView('weigh')" class="px-4 py-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-700 flex items-center gap-2 transition">
-        <i data-lucide="scale" class="w-4 h-4"></i> Cântărire Probe
-      </button>
-      <button id="tabBtnCompress" onclick="switchView('compress')" class="px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 transition">
-        <i data-lucide="camera" class="w-4 h-4"></i> Cameră & Comprimare Poze
-      </button>
-    </div>
-  </div>
-
   <main id="viewWeigh" class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
     <!-- COLOANA STANGA: Panou Configurare & Tastatura Rapida -->
@@ -139,7 +125,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Greutate Țintă</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Greutate Țintă Standard</label>
             <div class="relative">
               <input type="number" id="inputTargetWeight" value="1000" min="1" class="w-full pl-3 pr-9 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">g</span>
@@ -190,33 +176,54 @@
             </button>
           </div>
 
-          <!-- Buton activare Mod Etichetă Individuală -->
-          <div class="mt-2.5">
-            <button type="button" id="btnToggleLabelMode" onclick="toggleLabelMode()" class="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200">
-              <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+          <!-- Mod Etichetă Individuală Avansat -->
+          <div class="mt-3">
+            <button type="button" id="btnToggleLabelMode" onclick="toggleLabelMode()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300">
+              <i data-lucide="tag" class="w-4 h-4"></i>
               <span id="labelModeBtnText">Activează Mod Etichetă Individuală</span>
             </button>
 
-            <!-- Camp Gramaj Etichetă (apare doar cand modul e activ) -->
-            <div id="labelModeFieldWrap" class="hidden mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <label for="inputLabelWeight" class="block text-[11px] font-bold text-amber-800 mb-1 uppercase tracking-wide">
-                Gramaj de pe Etichetă (g)
-              </label>
-              <div class="relative">
-                <input type="number" id="inputLabelWeight" step="any" placeholder="Ex: 455" class="w-full pl-3 pr-9 py-2 bg-white border border-amber-300 rounded-lg text-slate-900 font-bold focus:ring-2 focus:ring-amber-500 outline-none transition">
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-400 pointer-events-none">g</span>
+            <!-- Câmp Gramaj Etichetă cu preseturi rapide și opțiune de păstrare -->
+            <div id="labelModeFieldWrap" class="hidden mt-2.5 p-3.5 bg-amber-50/80 border border-amber-300 rounded-xl animate-pop">
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="inputLabelWeight" class="block text-[11px] font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-1">
+                  <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-600"></i> Gramaj de pe Etichetă (g)
+                </label>
+                <label class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 cursor-pointer">
+                  <input type="checkbox" id="checkKeepLabelWeight" class="rounded text-amber-600 focus:ring-amber-500 w-3 h-3">
+                  Păstrează gramajul la salvare
+                </label>
               </div>
-              <p class="text-[10px] text-amber-700 mt-1">Scrie gramajul de pe etichetă, apoi selectează greutatea de pe cântar mai jos ca de obicei. La adăugare vor apărea împreună: <strong>etichetă-cântar</strong> (ex: 455-470).</p>
+              <div class="relative">
+                <input type="number" id="inputLabelWeight" step="any" placeholder="Ex: 455" class="w-full pl-3 pr-12 py-2.5 bg-white border border-amber-300 rounded-lg text-amber-950 font-black text-base focus:ring-2 focus:ring-amber-500 outline-none transition shadow-sm">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-500 pointer-events-none">g</span>
+              </div>
+              
+              <!-- Comenzi Rapide Gramaj Eticheta -->
+              <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[10px]">
+                <span class="text-amber-800 font-bold">Rapid:</span>
+                <button type="button" onclick="setLabelWeightPreset(100)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">100g</button>
+                <button type="button" onclick="setLabelWeightPreset(250)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">250g</button>
+                <button type="button" onclick="setLabelWeightPreset(400)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">400g</button>
+                <button type="button" onclick="setLabelWeightPreset(500)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">500g</button>
+                <button type="button" onclick="setLabelWeightPreset(1000)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">1000g</button>
+              </div>
+
+              <p class="text-[10px] text-amber-800 font-medium mt-2 leading-relaxed">
+                💡 <strong>Tastatura de mai jos s-a adaptat automat la gramajul etichetei!</strong> Selectează greutatea citită pe cântar. În tabel va apărea: <strong>455g-470g</strong>.
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- Ecran Afisaj Greutate Selectata -->
-        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden">
-          <div class="text-xs uppercase tracking-widest text-indigo-300 font-medium mb-1">Greutate de Înregistrat</div>
+        <!-- Ecran Afisaj Greutate Selectata (Se Adapteaza Automat pe Mod Eticheta) -->
+        <div id="displayCardWrap" class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all">
+          <div id="displayLabelHeader" class="text-xs uppercase tracking-widest text-indigo-300 font-medium mb-1">Greutate de Înregistrat</div>
+          
           <div id="displaySelectedWeight" class="text-4xl sm:text-5xl font-black tracking-tight text-white my-1">
             1000 <span class="text-2xl font-bold text-indigo-300">g</span>
           </div>
+
           <div id="displayDifferenceBadge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere: 0 g (Fix)
           </div>
@@ -324,8 +331,8 @@
               <tr>
                 <th class="py-3 px-3 w-12 text-center">#</th>
                 <th class="py-3 px-3">Nume / Cod Probă</th>
-                <th class="py-3 px-3 text-right">Țintă (g)</th>
-                <th class="py-3 px-3 text-right">Real (g)</th>
+                <th class="py-3 px-3 text-right">Țintă / Etichetă</th>
+                <th class="py-3 px-3 text-right">Cântar (g)</th>
                 <th class="py-3 px-3 text-center">Abatere</th>
                 <th class="py-3 px-3 text-center no-print w-12">Acțiune</th>
               </tr>
@@ -359,138 +366,6 @@
 
   </main>
 
-  <!-- SECTIUNE COMPRIMARE & CAMERA POZE -->
-  <main id="viewCompress" class="hidden max-w-7xl mx-auto px-4 py-6 flex-1 w-full no-print">
-
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 mb-5">
-      <div class="flex justify-between items-center mb-1">
-        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-          <i data-lucide="camera" class="w-5 h-5 text-indigo-600"></i>
-          Captură Foto din Browser & Comprimare
-        </h2>
-      </div>
-      <p class="text-xs text-slate-500 mb-4">
-        Faci poze direct cu camera dispozitivului sau le încarci din galerie. Se comprimă instant, direct pe telefonul sau calculatorul tău, fără să fie trimise pe vreun server exterior.
-      </p>
-
-      <!-- Setari de calitate si dimensiune -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Redimensionare Poze</label>
-          <select id="selectResizePercent" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-            <option value="1" selected>100% (Original - Recomandat pt Text / Etichete)</option>
-            <option value="0.9">90%</option>
-            <option value="0.8">80%</option>
-            <option value="0.7">70%</option>
-            <option value="0.6">60%</option>
-            <option value="0.5">50%</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Calitate Compresie JPEG</label>
-          <select id="selectJpegQuality" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-            <option value="0.95">95% (Claritate Maximă pt Etichete)</option>
-            <option value="0.90" selected>90% (Recomandat pt Scris / Etichete)</option>
-            <option value="0.82">82% (Echilibrat)</option>
-            <option value="0.75">75%</option>
-            <option value="0.65">65% (Fișiere Mici)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- MODUL CAMERA IN TIMP REAL -->
-      <div class="bg-slate-900 rounded-2xl p-4 text-white mb-5 shadow-lg border border-slate-800">
-        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Cameră Foto Directă Browser</h3>
-          </div>
-          <div class="flex gap-2">
-            <button id="btnToggleCamera" onclick="toggleCameraStream()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
-              <i data-lucide="video" class="w-3.5 h-3.5"></i>
-              <span id="btnCameraStatusText">Pornește Camera</span>
-            </button>
-            <button id="btnSwitchCameraFacing" onclick="switchCameraFacing()" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Schimbă Camera
-            </button>
-          </div>
-        </div>
-
-        <!-- Vizualizator Video Camera -->
-        <div id="cameraPreviewContainer" class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-slate-800">
-          <video id="cameraVideo" autoplay playsinline muted class="w-full h-full object-contain hidden"></video>
-
-          <div id="cameraPlaceholder" class="text-center p-6 text-slate-500 flex flex-col items-center">
-            <i data-lucide="camera-off" class="w-12 h-12 mb-2 text-slate-600"></i>
-            <p class="text-xs font-semibold text-slate-400">Camera din browser este oprită</p>
-            <p class="text-[11px] text-slate-500 mt-1">Poți folosi camera din browser sau butonul de cameră nativă de mai jos.</p>
-          </div>
-
-          <!-- Overlay Flash Efect la Poza -->
-          <div id="cameraFlashOverlay" class="absolute inset-0 bg-white pointer-events-none opacity-0 transition-opacity duration-150"></div>
-        </div>
-
-        <!-- Buton Captura Poza -->
-        <div class="mt-3 flex justify-center">
-          <button id="btnSnapPhoto" onclick="snapPhotoFromCamera()" disabled class="w-full sm:w-auto bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed hover:bg-emerald-500 text-white font-extrabold px-6 py-3 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950">
-            <i data-lucide="aperture" class="w-5 h-5"></i> FĂ POZĂ & COMPRIMĂ
-          </button>
-        </div>
-      </div>
-
-      <!-- Incarcare alternativa din fișiere / Camera foto nativă a telefonului (cu auto-focus macro) -->
-      <div class="border-t border-slate-200 pt-4">
-        <label for="inputNativeCamera" class="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-indigo-300 bg-indigo-50/30 hover:border-indigo-500 hover:bg-indigo-50 rounded-xl py-5 cursor-pointer transition text-center p-4 mb-3">
-          <div class="p-2 bg-indigo-600 text-white rounded-full">
-            <i data-lucide="camera" class="w-6 h-6"></i>
-          </div>
-          <span class="text-xs font-bold text-indigo-900">Deschide Camera Foto Nativă a Telefonului (Recomandat pt Etichete & Auto-Focus)</span>
-          <span class="text-[11px] text-slate-500">Apasă aici ca să faci poza cu camera telefonului (claritate maximă + macro), apoi se comprimă automat!</span>
-          <input type="file" id="inputNativeCamera" accept="image/*" capture="environment" class="hidden">
-        </label>
-
-        <label for="inputPhotoFiles" class="flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 rounded-xl py-3 cursor-pointer transition text-center">
-          <i data-lucide="upload-cloud" class="w-4 h-4 text-slate-400"></i>
-          <span class="text-xs font-semibold text-slate-600">Sau încarcă poze existente din galeria telefonului / PC</span>
-          <input type="file" id="inputPhotoFiles" accept="image/*" multiple class="hidden">
-        </label>
-      </div>
-
-      <!-- Progresoare Compresie -->
-      <div id="compressProgressWrap" class="hidden mt-4">
-        <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
-          <span id="compressProgressText">Se comprimă...</span>
-          <span id="compressProgressPercent">0%</span>
-        </div>
-        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-          <div id="compressProgressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all" style="width:0%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Rezultate comprimare -->
-    <div id="compressResultsWrap" class="hidden bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-      <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <div>
-          <h3 class="text-sm font-bold text-slate-800">Rezultate Poze Comprimate</h3>
-          <p id="compressSummaryText" class="text-xs text-slate-500"></p>
-        </div>
-        <div class="flex gap-2">
-          <button id="btnDownloadZip" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
-            <i data-lucide="folder-down" class="w-3.5 h-3.5"></i> Descarcă Toate (ZIP)
-          </button>
-          <button id="btnClearCompressResults" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-slate-300">
-            <i data-lucide="x" class="w-3.5 h-3.5"></i> Golește
-          </button>
-        </div>
-      </div>
-      <div id="compressResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[480px] overflow-y-auto pr-1">
-        <!-- carduri poze generate din JS -->
-      </div>
-    </div>
-
-  </main>
-
   <!-- Toast Notification Custom -->
   <div id="toastNotification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-200 z-50 pointer-events-none">
     <div id="toastIcon" class="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
@@ -514,14 +389,13 @@
     </div>
   </div>
 
-  <!-- MODAL AUTENTIFICARE CLOUD (LOGARE / INREGISTRARE) -->
+  <!-- MODAL AUTENTIFICARE CLOUD -->
   <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-left relative">
       <button onclick="window.closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <!-- Stare: Deconectat (Formular Autentificare) -->
       <div id="authFormSection">
         <div class="flex items-center gap-2 mb-2 text-indigo-900">
           <i data-lucide="cloud" class="w-6 h-6 text-indigo-600"></i>
@@ -552,7 +426,6 @@
         </form>
       </div>
 
-      <!-- Stare: Conectat (Detalii Cont & Deconectare) -->
       <div id="userInfoSection" class="hidden text-center py-2">
         <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
           <i data-lucide="check-circle-2" class="w-6 h-6"></i>
@@ -568,7 +441,7 @@
     </div>
   </div>
 
-  <!-- FIRBASE CLOUD ENGINE INTEGRATION -->
+  <!-- FIREBASE CLOUD ENGINE INTEGRATION -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -622,14 +495,12 @@
       }
     }
 
-    // Funcție ajutătoare care transformă un username simplu într-o adresă internă validă pentru Firebase
     function formatUsernameToEmail(username) {
       const clean = username.trim().toLowerCase().replace(/\s+/g, '');
       if (clean.includes('@')) return clean;
       return `${clean}@laborator.local`;
     }
 
-    // Autentificare Utilizator cu Username
     window.handleLogin = async () => {
       const usernameInput = document.getElementById('authUsername').value.trim();
       const password = document.getElementById('authPassword').value;
@@ -678,7 +549,6 @@
       }
     };
 
-    // Ascultător Stare Autentificare
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
 
@@ -721,11 +591,9 @@
       }
     });
 
-    // Suprascriem funcțiile globale de salvare/ștergere pentru a le trimite direct în Cloud Firestore când userul e logat
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
       if (currentUser && !currentUser.isAnonymous) {
-        // Când utilizatorul adaugă sau șterge o probă, o trimitem în Cloud Firestore
         samplesList.forEach(sample => {
           const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
           setDoc(sampleDocRef, sample).catch(err => console.error(err));
@@ -746,7 +614,6 @@
 
     const confirmModalConfirmBtn = document.getElementById('btnConfirmModal');
     if (confirmModalConfirmBtn) {
-      const originalConfirmHandler = confirmModalConfirmBtn.onclick;
       confirmModalConfirmBtn.addEventListener('click', () => {
         if (currentUser && !currentUser.isAnonymous) {
           samplesList.forEach(sample => {
@@ -776,6 +643,8 @@
     const checkAutoIncrement = document.getElementById('checkAutoIncrement');
     const displaySelectedWeight = document.getElementById('displaySelectedWeight');
     const displayDifferenceBadge = document.getElementById('displayDifferenceBadge');
+    const displayCardWrap = document.getElementById('displayCardWrap');
+    const displayLabelHeader = document.getElementById('displayLabelHeader');
     const containerMinusButtons = document.getElementById('containerMinusButtons');
     const containerPlusButtons = document.getElementById('containerPlusButtons');
     const btnExactTarget = document.getElementById('btnExactTarget');
@@ -791,23 +660,36 @@
     const labelModeFieldWrap = document.getElementById('labelModeFieldWrap');
     const labelModeBtnText = document.getElementById('labelModeBtnText');
     const inputLabelWeight = document.getElementById('inputLabelWeight');
+    const checkKeepLabelWeight = document.getElementById('checkKeepLabelWeight');
 
+    // Activați sau dezactivați modul Etichetă Individuală
     function toggleLabelMode() {
       labelModeActive = !labelModeActive;
 
       if (labelModeActive) {
         labelModeFieldWrap.classList.remove('hidden');
-        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border transition bg-amber-500 text-white border-amber-500 shadow-sm";
-        labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (dezactivează)";
-        if (inputLabelWeight) inputLabelWeight.focus();
+        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition bg-amber-500 text-white border border-amber-600 shadow-md";
+        labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (Apasă pentru dezactivare)";
+        displayCardWrap.className = "bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-2xl p-5 text-center text-white mb-5 shadow-lg relative overflow-hidden transition-all border border-amber-500/40";
+        if (inputLabelWeight) {
+          inputLabelWeight.focus();
+        }
       } else {
         labelModeFieldWrap.classList.add('hidden');
-        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200";
+        btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300";
         labelModeBtnText.innerText = "Activează Mod Etichetă Individuală";
+        displayCardWrap.className = "bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all";
         if (inputLabelWeight) inputLabelWeight.value = '';
       }
 
+      updateKeypad();
       if (window.lucide) lucide.createIcons();
+    }
+
+    function setLabelWeightPreset(val) {
+      if (!inputLabelWeight) return;
+      inputLabelWeight.value = val;
+      updateKeypad();
     }
 
     function setBaseTarget(val) {
@@ -829,9 +711,23 @@
     }
 
     function updateKeypad() {
-      targetWeight = parseFloat(inputTargetWeight.value) || 1000;
       step = parseFloat(inputStep.value) || 5;
       buttonCountPerSide = parseInt(selectButtonCount.value) || 6;
+
+      // Determinăm baza de calcul pentru tastatură:
+      // Dacă modul etichetă este activ și s-a introdus un gramaj pe etichetă, tastatura se adaptează pe acela!
+      let currentBaseWeight = parseFloat(inputTargetWeight.value) || 1000;
+      let isUsingLabelBase = false;
+
+      if (labelModeActive && inputLabelWeight && inputLabelWeight.value.trim() !== '') {
+        const parsedLabel = parseFloat(inputLabelWeight.value);
+        if (!isNaN(parsedLabel) && parsedLabel > 0) {
+          currentBaseWeight = parsedLabel;
+          isUsingLabelBase = true;
+        }
+      }
+
+      targetWeight = currentBaseWeight;
 
       if (targetWeightValueText) {
         targetWeightValueText.innerText = `${targetWeight}g`;
@@ -844,8 +740,10 @@
           const offset = Math.round(i * step * 100) / 100;
           const val = Math.round((targetWeight - offset) * 100) / 100;
           const btn = document.createElement('button');
-          btn.className = 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] text-slate-400 font-normal">(${val}g)</span>`;
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
           btn.onclick = () => setSelectedWeight(val);
           containerMinusButtons.appendChild(btn);
         }
@@ -858,10 +756,20 @@
           const offset = Math.round(i * step * 100) / 100;
           const val = Math.round((targetWeight + offset) * 100) / 100;
           const btn = document.createElement('button');
-          btn.className = 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] text-slate-400 font-normal">(${val}g)</span>`;
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
           btn.onclick = () => setSelectedWeight(val);
           containerPlusButtons.appendChild(btn);
+        }
+      }
+
+      if (btnExactTarget) {
+        if (isUsingLabelBase) {
+          btnExactTarget.className = "keypad-btn w-full h-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-amber-200 border border-amber-500 text-center leading-tight";
+        } else {
+          btnExactTarget.className = "keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight";
         }
       }
 
@@ -870,24 +778,50 @@
 
     function setSelectedWeight(val) {
       selectedWeight = val;
-      if (displaySelectedWeight) {
-        displaySelectedWeight.innerHTML = `${selectedWeight} <span class="text-2xl font-bold text-indigo-300">g</span>`;
+
+      if (labelModeActive) {
+        const labelWeightVal = parseFloat(inputLabelWeight.value) || 0;
+        if (displayLabelHeader) displayLabelHeader.innerText = "Măsurare: Etichetă ➔ Cântar";
+        if (displaySelectedWeight) {
+          displaySelectedWeight.innerHTML = `<span class="text-amber-300 font-extrabold text-3xl sm:text-4xl">${labelWeightVal}g</span> <span class="text-xs text-amber-200/80">etichetă</span> ➔ <span class="text-white text-4xl sm:text-5xl font-black">${selectedWeight}</span><span class="text-2xl font-bold text-amber-300">g</span>`;
+        }
+
+        const labelDiff = selectedWeight - labelWeightVal;
+        if (displayDifferenceBadge) {
+          if (labelDiff === 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere etichetă: 0 g (Conform)`;
+          } else if (labelDiff > 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/30 text-amber-200 border border-amber-400/40";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere etichetă: +${labelDiff} g`;
+          } else {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/40";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere etichetă: ${labelDiff} g`;
+          }
+        }
+
+      } else {
+        if (displayLabelHeader) displayLabelHeader.innerText = "Greutate de Înregistrat";
+        if (displaySelectedWeight) {
+          displaySelectedWeight.innerHTML = `${selectedWeight} <span class="text-2xl font-bold text-indigo-300">g</span>`;
+        }
+
+        const diff = selectedWeight - targetWeight;
+        if (displayDifferenceBadge) {
+          if (diff === 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere: 0 g (Fix)`;
+          } else if (diff > 0) {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere: +${diff} g`;
+          } else {
+            displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30";
+            displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere: ${diff} g`;
+          }
+        }
       }
 
-      const diff = selectedWeight - targetWeight;
-      if (displayDifferenceBadge) {
-        if (diff === 0) {
-          displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-          displayDifferenceBadge.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Abatere: 0 g (Fix)`;
-        } else if (diff > 0) {
-          displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
-          displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-up" class="w-3.5 h-3.5"></i> Abatere: +${diff} g`;
-        } else {
-          displayDifferenceBadge.className = "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30";
-          displayDifferenceBadge.innerHTML = `<i data-lucide="arrow-down" class="w-3.5 h-3.5"></i> Abatere: ${diff} g`;
-        }
-        if (window.lucide) lucide.createIcons();
-      }
+      if (window.lucide) lucide.createIcons();
     }
 
     function addSample() {
@@ -900,8 +834,8 @@
 
       if (labelModeActive) {
         const labelWeight = parseFloat(inputLabelWeight.value);
-        if (isNaN(labelWeight)) {
-          showToast("Introdu gramajul de pe etichetă!", "error");
+        if (isNaN(labelWeight) || labelWeight <= 0) {
+          showToast("Introduceți un gramaj valid de pe etichetă!", "error");
           inputLabelWeight.focus();
           return;
         }
@@ -927,7 +861,7 @@
       saveToLocalStorage();
       renderTable();
       updateStatistics();
-      showToast(`Adăugat: ${name} (${selectedWeight}g)`);
+      showToast(`Adăugat: ${name} (${sample.isLabelMode ? `${sample.targetWeight}g-` : ''}${selectedWeight}g)`);
       playConfirmSound();
 
       if (checkAutoIncrement.checked) {
@@ -943,9 +877,13 @@
         }
       }
 
+      // Gestionare golire sau păstrare gramaj etichetă
       if (labelModeActive && inputLabelWeight) {
-        inputLabelWeight.value = '';
+        if (!checkKeepLabelWeight.checked) {
+          inputLabelWeight.value = '';
+        }
         inputLabelWeight.focus();
+        updateKeypad();
       }
 
       saveUIState();
@@ -1004,22 +942,26 @@
           const diffBadge = sample.diff === 0 
             ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0g</span>`
             : sample.diff > 0 
-              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">+${sample.diff}g</span>`
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900">+${sample.diff}g</span>`
               : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${sample.diff}g</span>`;
 
           const nameCell = sample.isLabelMode
-            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>`
+            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>`
             : sample.name;
 
           const targetCell = sample.isLabelMode
-            ? `<span title="Gramaj etichetă">${sample.targetWeight}g</span>`
+            ? `<span class="font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="Gramaj etichetă">${sample.targetWeight}g</span>`
             : `${sample.targetWeight}g`;
+
+          const actualCell = sample.isLabelMode
+            ? `<span class="font-black text-slate-900">${sample.actualWeight}g</span> <span class="text-[10px] text-slate-400 font-mono">(${sample.targetWeight}-${sample.actualWeight})</span>`
+            : `<span class="font-black text-indigo-900 text-sm">${sample.actualWeight}g</span>`;
 
           tr.innerHTML = `
             <td class="py-2.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
             <td class="py-2.5 px-3 font-bold text-slate-800">${nameCell}</td>
-            <td class="py-2.5 px-3 text-right font-semibold text-slate-500">${targetCell}</td>
-            <td class="py-2.5 px-3 text-right font-black text-indigo-900 text-sm">${sample.actualWeight}g</td>
+            <td class="py-2.5 px-3 text-right font-semibold text-slate-600">${targetCell}</td>
+            <td class="py-2.5 px-3 text-right">${actualCell}</td>
             <td class="py-2.5 px-3 text-center">${diffBadge}</td>
             <td class="py-2.5 px-3 text-center no-print">
               <button onclick="deleteSample(${sample.id})" class="text-slate-300 hover:text-red-600 transition p-1">
@@ -1079,7 +1021,10 @@
       const state = {
         sampleName: inputSampleName.value,
         autoIncrement: checkAutoIncrement.checked,
-        soundMode: soundMode
+        soundMode: soundMode,
+        labelModeActive: labelModeActive,
+        labelWeight: inputLabelWeight ? inputLabelWeight.value : '',
+        keepLabelWeight: checkKeepLabelWeight ? checkKeepLabelWeight.checked : false
       };
       localStorage.setItem('lab_ui_state', JSON.stringify(state));
     }
@@ -1097,8 +1042,15 @@
           }
           if (typeof state.soundMode === 'string') {
             soundMode = state.soundMode;
-          } else if (typeof state.soundEnabled === 'boolean') {
-            soundMode = state.soundEnabled ? 'full' : 'silent';
+          }
+          if (typeof state.keepLabelWeight === 'boolean' && checkKeepLabelWeight) {
+            checkKeepLabelWeight.checked = state.keepLabelWeight;
+          }
+          if (state.labelModeActive && !labelModeActive) {
+            if (typeof state.labelWeight === 'string' && inputLabelWeight) {
+              inputLabelWeight.value = state.labelWeight;
+            }
+            toggleLabelMode();
           }
         } catch (e) {
           console.error(e);
@@ -1313,6 +1265,17 @@
     selectButtonCount.addEventListener('change', updateKeypad);
     document.getElementById('btnAddSample').addEventListener('click', addSample);
 
+    if (inputLabelWeight) {
+      inputLabelWeight.addEventListener('input', () => {
+        updateKeypad();
+        saveUIState();
+      });
+    }
+
+    if (checkKeepLabelWeight) {
+      checkKeepLabelWeight.addEventListener('change', saveUIState);
+    }
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.activeElement !== document.getElementById('btnResetAll')) {
         e.preventDefault();
@@ -1326,418 +1289,6 @@
     updateKeypad();
     loadFromLocalStorage();
     loadUIState();
-
-    let compressedResults = []; 
-    let cameraStream = null;
-    let cameraFacingMode = 'environment'; // 'environment' (back camera) or 'user' (front)
-    let photoCounter = 1;
-
-    const tabBtnWeigh = document.getElementById('tabBtnWeigh');
-    const tabBtnCompress = document.getElementById('tabBtnCompress');
-    const viewWeigh = document.getElementById('viewWeigh');
-    const viewCompress = document.getElementById('viewCompress');
-    const inputPhotoFiles = document.getElementById('inputPhotoFiles');
-    const selectResizePercent = document.getElementById('selectResizePercent');
-    const selectJpegQuality = document.getElementById('selectJpegQuality');
-    const compressProgressWrap = document.getElementById('compressProgressWrap');
-    const compressProgressBar = document.getElementById('compressProgressBar');
-    const compressProgressPercent = document.getElementById('compressProgressPercent');
-    const compressProgressText = document.getElementById('compressProgressText');
-    const compressResultsWrap = document.getElementById('compressResultsWrap');
-    const compressResultsGrid = document.getElementById('compressResultsGrid');
-    const compressSummaryText = document.getElementById('compressSummaryText');
-    const btnDownloadZip = document.getElementById('btnDownloadZip');
-    const btnClearCompressResults = document.getElementById('btnClearCompressResults');
-
-    const cameraVideo = document.getElementById('cameraVideo');
-    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-    const btnSnapPhoto = document.getElementById('btnSnapPhoto');
-    const btnCameraStatusText = document.getElementById('btnCameraStatusText');
-    const btnSwitchCameraFacing = document.getElementById('btnSwitchCameraFacing');
-    const cameraFlashOverlay = document.getElementById('cameraFlashOverlay');
-
-    function switchView(view) {
-      const activeClasses = ['border-indigo-600', 'text-indigo-700'];
-      const inactiveClasses = ['border-transparent', 'text-slate-500'];
-
-      if (view === 'weigh') {
-        viewWeigh.classList.remove('hidden');
-        viewCompress.classList.add('hidden');
-        tabBtnWeigh.classList.add(...activeClasses);
-        tabBtnWeigh.classList.remove(...inactiveClasses);
-        tabBtnCompress.classList.add(...inactiveClasses);
-        tabBtnCompress.classList.remove(...activeClasses);
-        stopCameraStream();
-      } else {
-        viewWeigh.classList.add('hidden');
-        viewCompress.classList.remove('hidden');
-        tabBtnCompress.classList.add(...activeClasses);
-        tabBtnCompress.classList.remove(...inactiveClasses);
-        tabBtnWeigh.classList.add(...inactiveClasses);
-        tabBtnWeigh.classList.remove(...activeClasses);
-      }
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function formatBytes(bytes) {
-      if (bytes < 1024) return `${bytes} B`;
-      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-    }
-
-    async function startCameraStream() {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          showToast("Browserul sau protocolul (HTTP/fișier local) nu permite accesul la cameră.", "error");
-          return;
-        }
-
-        // Cerem rezoluție maximă posibila (4K / FullHD) și focus continuu pentru etichete
-        const constraints = {
-          video: {
-            facingMode: { ideal: cameraFacingMode },
-            width: { ideal: 3840, min: 1920 },
-            height: { ideal: 2160, min: 1080 },
-            advanced: [{ focusMode: 'continuous' }]
-          },
-          audio: false
-        };
-
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        cameraVideo.srcObject = cameraStream;
-        cameraVideo.classList.remove('hidden');
-        cameraPlaceholder.classList.add('hidden');
-        btnSnapPhoto.disabled = false;
-        btnCameraStatusText.innerText = "Oprește Camera";
-        btnSwitchCameraFacing.classList.remove('hidden');
-        showToast("Cameră pornită în mod înaltă rezoluție!");
-      } catch (err) {
-        // Fallback dacă dispozitivul nu suportă cerințele 4K
-        try {
-          cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: cameraFacingMode } },
-            audio: false
-          });
-          cameraVideo.srcObject = cameraStream;
-          cameraVideo.classList.remove('hidden');
-          cameraPlaceholder.classList.add('hidden');
-          btnSnapPhoto.disabled = false;
-          btnCameraStatusText.innerText = "Oprește Camera";
-          btnSwitchCameraFacing.classList.remove('hidden');
-        } catch(fallbackErr) {
-          console.error("Eroare camera:", fallbackErr);
-          showToast("Nu s-a putut deschide camera. Verifică permisiunile!", "error");
-        }
-      }
-    }
-
-    function stopCameraStream() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-      }
-      cameraVideo.classList.add('hidden');
-      cameraPlaceholder.classList.remove('hidden');
-      btnSnapPhoto.disabled = true;
-      btnCameraStatusText.innerText = "Pornește Camera";
-      btnSwitchCameraFacing.classList.add('hidden');
-    }
-
-    function toggleCameraStream() {
-      if (cameraStream) {
-        stopCameraStream();
-      } else {
-        startCameraStream();
-      }
-    }
-
-    function switchCameraFacing() {
-      cameraFacingMode = (cameraFacingMode === 'environment') ? 'user' : 'environment';
-      if (cameraStream) {
-        stopCameraStream();
-        startCameraStream();
-      }
-    }
-
-    async function snapPhotoFromCamera() {
-      if (!cameraStream || cameraVideo.paused || cameraVideo.ended) {
-        showToast("Camera nu este activă!", "error");
-        return;
-      }
-
-      // Efect vizual de Bliț
-      cameraFlashOverlay.classList.remove('opacity-0');
-      setTimeout(() => cameraFlashOverlay.classList.add('opacity-0'), 150);
-
-      playConfirmSound();
-
-      const scale = parseFloat(selectResizePercent.value) || 1.0;
-      const quality = parseFloat(selectJpegQuality.value) || 0.90;
-
-      // Încercăm mai întâi ImageCapture API (dacă e suportat de browser) pentru poză la rezoluție de senzor foto nativ
-      const videoTrack = cameraStream.getVideoTracks()[0];
-      if (window.ImageCapture && videoTrack) {
-        try {
-          const imageCapture = new ImageCapture(videoTrack);
-          const photoBlob = await imageCapture.takePhoto();
-          
-          // Re-comprimăm poza nativă la setările alese de utilizator
-          const imgFile = new File([photoBlob], `Foto_Proba_${String(photoCounter++).padStart(3, '0')}.jpg`, { type: 'image/jpeg' });
-          const compressedBlob = await compressOneImage(imgFile, scale, quality);
-
-          const fileName = `Foto_Proba_${String(photoCounter - 1).padStart(3, '0')}.jpg`;
-          compressedResults.push({
-            name: fileName,
-            blob: compressedBlob,
-            url: URL.createObjectURL(compressedBlob),
-            originalSize: photoBlob.size,
-            compressedSize: compressedBlob.size
-          });
-
-          renderCompressResults();
-          showToast(`Poza etichetă ${fileName} salvată cu claritate maximă!`);
-          return;
-        } catch (icError) {
-          console.warn("ImageCapture a eșuat, se folosește cadrul din Canvas:", icError);
-        }
-      }
-
-      // Fallback: Captură cadru din Canvas
-      const vidW = cameraVideo.videoWidth || 1920;
-      const vidH = cameraVideo.videoHeight || 1080;
-
-      const targetW = Math.max(1, Math.round(vidW * scale));
-      const targetH = Math.max(1, Math.round(vidH * scale));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(cameraVideo, 0, 0, targetW, targetH);
-
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          showToast("Nu s-a putut crea fotografia!", "error");
-          return;
-        }
-
-        const fileName = `Foto_Proba_${String(photoCounter++).padStart(3, '0')}.jpg`;
-        const approxOriginalSize = Math.round(vidW * vidH * 0.5);
-
-        compressedResults.push({
-          name: fileName,
-          blob: blob,
-          url: URL.createObjectURL(blob),
-          originalSize: approxOriginalSize,
-          compressedSize: blob.size
-        });
-
-        renderCompressResults();
-        showToast(`Poza ${fileName} a fost salvată!`);
-      }, 'image/jpeg', quality);
-    }
-
-    // Funcții pentru Comprimare Poze & Descarcare ZIP
-    function compressOneImage(file, scale, quality) {
-      return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-          const targetW = Math.max(1, Math.round(img.naturalWidth * scale));
-          const targetH = Math.max(1, Math.round(img.naturalHeight * scale));
-
-          const canvas = document.createElement('canvas');
-          canvas.width = targetW;
-          canvas.height = targetH;
-          const ctx = canvas.getContext('2d');
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, targetW, targetH);
-
-          canvas.toBlob((blob) => {
-            URL.revokeObjectURL(url);
-            if (!blob) {
-              reject(new Error('Nu s-a putut genera imaginea comprimată'));
-              return;
-            }
-            resolve(blob);
-          }, 'image/jpeg', quality);
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(url);
-          reject(new Error('Nu s-a putut citi poza'));
-        };
-        img.src = url;
-      });
-    }
-
-    function jpegNameFor(originalName) {
-      const base = originalName.replace(/\.[^.]+$/, '');
-      return `${base}_comprimat.jpg`;
-    }
-
-    async function handlePhotosSelected(files) {
-      if (!files || files.length === 0) return;
-
-      const scale = parseFloat(selectResizePercent.value) || 1.0;
-      const quality = parseFloat(selectJpegQuality.value) || 0.90;
-
-      compressProgressWrap.classList.remove('hidden');
-      compressResultsWrap.classList.add('hidden');
-      compressProgressBar.style.width = '0%';
-      compressProgressPercent.innerText = '0%';
-
-      const newResults = [];
-      const total = files.length;
-
-      for (let i = 0; i < total; i++) {
-        const file = files[i];
-        compressProgressText.innerText = `Se comprimă: ${file.name} (${i + 1}/${total})`;
-
-        try {
-          const blob = await compressOneImage(file, scale, quality);
-          const outName = jpegNameFor(file.name);
-          newResults.push({
-            name: outName,
-            blob: blob,
-            url: URL.createObjectURL(blob),
-            originalSize: file.size,
-            compressedSize: blob.size
-          });
-        } catch (e) {
-          console.error(`Eroare la ${file.name}:`, e);
-          showToast(`Nu s-a putut comprima: ${file.name}`, "error");
-        }
-
-        const pct = Math.round(((i + 1) / total) * 100);
-        compressProgressBar.style.width = `${pct}%`;
-        compressProgressPercent.innerText = `${pct}%`;
-
-        if (i % 3 === 0) await new Promise(r => setTimeout(r, 0));
-      }
-
-      compressedResults = compressedResults.concat(newResults);
-      compressProgressWrap.classList.add('hidden');
-      renderCompressResults();
-
-      if (newResults.length > 0) {
-        showToast(`${newResults.length} poze comprimate cu succes!`);
-        playConfirmSound();
-      }
-    }
-
-    function renderCompressResults() {
-      if (compressedResults.length === 0) {
-        compressResultsWrap.classList.add('hidden');
-        return;
-      }
-
-      compressResultsWrap.classList.remove('hidden');
-      compressResultsGrid.innerHTML = '';
-
-      let totalOriginal = 0;
-      let totalCompressed = 0;
-
-      compressedResults.forEach((res) => {
-        totalOriginal += res.originalSize;
-        totalCompressed += res.compressedSize;
-
-        const reduction = res.originalSize > 0
-          ? Math.round((1 - res.compressedSize / res.originalSize) * 100)
-          : 0;
-
-        const card = document.createElement('div');
-        card.className = "border border-slate-200 rounded-xl overflow-hidden bg-slate-50 flex flex-col animate-pop";
-        card.innerHTML = `
-          <img src="${res.url}" class="w-full h-28 object-cover bg-slate-200" alt="${res.name}">
-          <div class="p-2 flex-1 flex flex-col gap-1">
-            <p class="text-[10px] font-bold text-slate-700 truncate" title="${res.name}">${res.name}</p>
-            <p class="text-[10px] text-slate-400">
-              ${formatBytes(res.originalSize)} → <span class="text-emerald-600 font-bold">${formatBytes(res.compressedSize)}</span>
-            </p>
-            <p class="text-[10px] font-semibold text-emerald-600">-${reduction}%</p>
-            <a href="${res.url}" download="${res.name}" class="mt-1 text-center bg-white hover:bg-slate-100 border border-slate-300 text-slate-600 text-[10px] font-bold py-1 rounded-lg transition flex items-center justify-center gap-1">
-              <i data-lucide="download" class="w-3 h-3"></i> Descarcă
-            </a>
-          </div>
-        `;
-        compressResultsGrid.appendChild(card);
-      });
-
-      const totalReductionPct = totalOriginal > 0
-        ? Math.round((1 - totalCompressed / totalOriginal) * 100)
-        : 0;
-
-      compressSummaryText.innerText =
-        `${compressedResults.length} poze • ${formatBytes(totalOriginal)} → ${formatBytes(totalCompressed)} (redus cu ${totalReductionPct}%)`;
-
-      if (window.lucide) lucide.createIcons();
-    }
-
-    async function downloadAllAsZip() {
-      if (compressedResults.length === 0) {
-        showToast("Nu ai nicio poză comprimată!", "error");
-        return;
-      }
-
-      if (typeof JSZip === 'undefined') {
-        showToast("Nu s-a putut încărca funcția de arhivare (verifică conexiunea la internet).", "error");
-        return;
-      }
-
-      showToast("Se pregătește arhiva ZIP...", "info");
-
-      const zip = new JSZip();
-      compressedResults.forEach(res => {
-        zip.file(res.name, res.blob);
-      });
-
-      try {
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        const url = URL.createObjectURL(zipBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Poze_Comprimate_${new Date().toISOString().slice(0, 10)}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        showToast("Arhiva ZIP a fost descărcată!");
-      } catch (e) {
-        console.error(e);
-        showToast("Eroare la generarea arhivei ZIP.", "error");
-      }
-    }
-
-    function clearCompressResults() {
-      compressedResults.forEach(res => URL.revokeObjectURL(res.url));
-      compressedResults = [];
-      renderCompressResults();
-      if (inputPhotoFiles) inputPhotoFiles.value = '';
-      if (inputNativeCamera) inputNativeCamera.value = '';
-      showToast("Rezultatele au fost șterse.", "info");
-    }
-
-    // Event listeners
-    const inputNativeCamera = document.getElementById('inputNativeCamera');
-    if (inputNativeCamera) {
-      inputNativeCamera.addEventListener('change', (e) => {
-        handlePhotosSelected(e.target.files);
-      });
-    }
-    if (inputPhotoFiles) {
-      inputPhotoFiles.addEventListener('change', (e) => {
-        handlePhotosSelected(e.target.files);
-      });
-    }
-    if (btnDownloadZip) {
-      btnDownloadZip.addEventListener('click', downloadAllAsZip);
-    }
-    if (btnClearCompressResults) {
-      btnClearCompressResults.addEventListener('click', clearCompressResults);
-    }
   </script>
 </body>
 </html>
