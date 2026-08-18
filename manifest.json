@@ -1,0 +1,19 @@
+{
+"name": "ICA Cantarire Probe",
+"short_name": "ICA Lab",
+"start_url": "./",
+"display": "standalone",
+"background_color": "#f1f5f9",
+"theme_color": "#312e81",
+"orientation": "portrait",
+"icons": [
+{
+"src": "icon.png",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any maskable"
+},
+{
+"src": "icon.png",
+"sizes": "512x512",
+"type": "image/png",
