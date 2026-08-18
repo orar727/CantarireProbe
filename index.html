@@ -12,20 +12,17 @@
   <meta name="apple-mobile-web-app-title" content="ICA Lab">
   <meta name="theme-color" content="#312e81">
 
-  <!-- Manifest PWA încorporat via Data-URI pentru recunoaștere nativă -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"ICA Cantarire Probe","short_name":"ICA Lab","start_url":"./","display":"standalone","background_color":"#f1f5f9","theme_color":"#312e81","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
+  <!-- Manifest PWA dedicat pentru Samsung Internet, Chrome si iOS -->
+  <link rel="manifest" href="manifest.json">
 
   <!-- Pictograme PWA & Browser -->
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
   <link rel="shortcut icon" href="icon.png">
 
   <!-- External Libraries -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
