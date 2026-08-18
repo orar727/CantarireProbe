@@ -1,31 +1,44 @@
 <!DOCTYPE html>
 <html lang="ro">
-head>
+<head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Asistent Cântărire Probe Laborator</title>
 
-  <!-- Pictogramă pentru Ecranul de Acasă & Tab Browser -->
+  <!-- PWA & Mobile Web App Standalone Meta Tags (Elimină insigna de browser la adăugarea pe ecran) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ICA Lab">
+  <meta name="theme-color" content="#312e81">
+
+  <!-- Manifest PWA încorporat via Data-URI pentru recunoaștere nativă -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"ICA Cantarire Probe","short_name":"ICA Lab","start_url":"./","display":"standalone","background_color":"#f1f5f9","theme_color":"#312e81","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}'>
+
+  <!-- Pictograme PWA & Browser -->
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="icon.png">
 
+  <!-- External Libraries -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .keypad-btn {
       transition: all 0.12s ease-in-out;
       user-select: none;
+      touch-action: manipulation;
     }
     .keypad-btn:active {
       transform: scale(0.94);
@@ -194,6 +207,7 @@ head>
             </button>
           </div>
 
+          <!-- Secțiune Depozite & Pastile Memorate -->
           <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
             <div class="flex items-center gap-2">
               <i data-lucide="building-2" class="w-4 h-4 text-slate-500 shrink-0"></i>
@@ -253,6 +267,7 @@ head>
           </div>
         </div>
 
+        <!-- Display Card & Buttons Keypad -->
         <div id="displayCardWrap" class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all">
           <div id="displayLabelHeader" class="text-xs uppercase tracking-widest text-indigo-300 font-medium mb-1">Greutate de Înregistrat</div>
           <div id="displaySelectedWeight" class="text-4xl sm:text-5xl font-black tracking-tight text-white my-1">
@@ -282,6 +297,7 @@ head>
 
     </section>
 
+    <!-- COLOANA DREAPTA: Tabel & Statistici -->
     <section class="lg:col-span-6 flex flex-col gap-5">
 
       <div class="grid grid-cols-3 gap-3 no-print">
@@ -381,6 +397,7 @@ head>
 
   </main>
 
+  <!-- MODAL: Scanner QR/EAN -->
   <div id="scannerModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100 text-center relative overflow-hidden">
       <button onclick="window.closeBarcodeScanner()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition z-10">
@@ -402,6 +419,7 @@ head>
     </div>
   </div>
 
+  <!-- MODAL: Catalog Coduri de Bare -->
   <div id="catalogModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
       <button onclick="window.closeCatalogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition">
@@ -463,6 +481,7 @@ head>
     </div>
   </div>
 
+  <!-- MODAL: Mapare EAN la scanare -->
   <div id="mapEanModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-100 text-left relative max-h-[85vh] flex flex-col">
       <button onclick="window.closeMapEanModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition">
@@ -492,6 +511,7 @@ head>
     </div>
   </div>
 
+  <!-- TOAST Notification -->
   <div id="toastNotification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-200 z-50 pointer-events-none">
     <div id="toastIcon" class="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
       <i data-lucide="check" class="w-4 h-4"></i>
@@ -499,6 +519,7 @@ head>
     <span id="toastMessage" class="text-xs font-semibold">Acțiune efectuată cu succes!</span>
   </div>
 
+  <!-- MODAL: Ștergere Generală -->
   <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 text-center">
       <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -513,6 +534,7 @@ head>
     </div>
   </div>
 
+  <!-- MODAL: Autentificare Cloud -->
   <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-left relative">
       <button onclick="window.closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -580,6 +602,7 @@ head>
     window.audioCtx = null;
     window.html5QrCodeInstance = null;
 
+    /* Renders custom deposits saved by user as clickable chips */
     window.renderUserDepositChips = function() {
       const wrap = document.getElementById('userDepositChipsWrap');
       const container = document.getElementById('userDepositChips');
@@ -629,6 +652,7 @@ head>
       if (window.lucide) window.lucide.createIcons();
     };
 
+    /* Saves new deposit to local user list */
     window.saveUserDeposit = function(depName) {
       if (!depName) return;
       const clean = depName.trim();
@@ -649,6 +673,7 @@ head>
       window.updateDepozitFiltersAndSuggestions();
     };
 
+    /* Removes a deposit chip */
     window.removeUserDeposit = function(depName) {
       if (!window.userDepositsList) return;
       window.userDepositsList = window.userDepositsList.filter(d => d.toLowerCase() !== depName.toLowerCase());
