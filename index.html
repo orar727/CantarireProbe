@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Asistent Cântărire Probe Laborator</title>
 
-  <!-- PWA & Mobile Web App Standalone Meta Tags (Elimină insigna de browser la adăugarea pe ecran) -->
+  <!-- PWA & Mobile Web App Standalone Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,6 +23,8 @@
 
   <!-- External Libraries -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -109,7 +111,7 @@
           <span>Catalog Coduri</span>
         </button>
 
-               <div id="authHeaderWrap">
+        <div id="authHeaderWrap">
           <button id="btnOpenAuthModal" onclick="window.openAuthModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow">
             <i data-lucide="user" class="w-3.5 h-3.5"></i>
             <span id="authHeaderBtnText">Conectare / Cont</span>
@@ -1629,7 +1631,7 @@
       window.updateSoundButton();
     };
 
-   window.updateSoundButton = function() {
+    window.updateSoundButton = function() {
       const btn = document.getElementById('btnToggleSound');
       if (!btn) return;
 
@@ -1650,9 +1652,6 @@
         btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition border border-slate-600";
         btn.title = "Silențios (click: sunet + vibrație)";
       }
-    };
-      }
-      if (window.lucide) window.lucide.createIcons();
     };
 
     window.toggleSound = function() {
