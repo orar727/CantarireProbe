@@ -1529,7 +1529,14 @@
 
         let metaInfo = [];
         if (sample.lot) metaInfo.push(`Lot: ${sample.lot}`);
-        if (sample.expDate) metaInfo.push(`Exp: ${sample.expDate}`);
+        if (sample.expDate) {
+          const parts = sample.expDate.split('-');
+          if (parts.length === 3) {
+            metaInfo.push(`${parts[2]}.${parts[1]}.${parts[0]}`);
+          } else {
+            metaInfo.push(sample.expDate);
+          }
+        }
 
         let fullKey = key;
         if (metaInfo.length > 0) {
@@ -1616,8 +1623,14 @@
             ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Lot: ${sample.lot}</span>`
             : '';
 
-          const expBadge = sample.expDate
-            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Exp: ${sample.expDate}</span>`
+          let formattedExpDate = '';
+          if (sample.expDate) {
+            const parts = sample.expDate.split('-');
+            formattedExpDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : sample.expDate;
+          }
+
+          const expBadge = formattedExpDate
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">${formattedExpDate}</span>`
             : '';
 
           const nameCell = sample.isLabelMode
