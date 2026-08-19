@@ -199,16 +199,18 @@
             </label>
           </div>
 
-          <div class="flex gap-2 items-center mb-2.5">
-            <div class="relative flex-1">
-              <input type="text" id="inputSampleName" placeholder="Ex: Probă Lapte 1.5% sau PROBA-001..." class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
-              <button onclick="window.clearSampleName()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
-                <i data-lucide="x-circle" class="w-5 h-5"></i>
-              </button>
-            </div>
-            
-            <!-- Buton Glisant Switch ACUM | EXP -->
-            <div class="shrink-0 flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-300" title="Glisează pentru a alege momentul alertării: ACUM (procesat azi) sau EXP (notificare la expirare)">
+          <!-- Câmp Nume Probă - Latime Completă pentru Ecran Mobil -->
+          <div class="relative w-full mb-2">
+            <input type="text" id="inputSampleName" placeholder="Ex: Probă Lapte 1.5% sau PROBA-001..." class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
+            <button onclick="window.clearSampleName()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x-circle" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Rândul de Comenzi: Switch Alertă (ACUM / EXP) + Buton Scaner -->
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-300" title="Glisează pentru a alege momentul alertării: ACUM (procesat azi) sau EXP (notificare la expirare)">
+              <span class="text-[10px] font-extrabold text-slate-500 uppercase px-1">Alertă:</span>
               <div class="relative inline-flex items-center bg-slate-200 p-0.5 rounded-lg cursor-pointer select-none" onclick="window.toggleAlertModeGlisat()">
                 <div id="sliderBgGlisat" class="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-indigo-600 rounded-md transition-all duration-200 shadow-sm left-0.5"></div>
                 <button type="button" id="lblAlertAcum" class="relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-white transition-colors duration-200">ACUM</button>
@@ -216,7 +218,7 @@
               </div>
             </div>
 
-            <button type="button" onclick="window.openBarcodeScanner()" class="px-3 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition border border-indigo-200 shadow-sm" title="Scanează Cod de Bare sau QR cu camera">
+            <button type="button" onclick="window.openBarcodeScanner()" class="px-3.5 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition border border-indigo-200 shadow-sm" title="Scanează Cod de Bare sau QR cu camera">
               <i data-lucide="qr-code" class="w-4 h-4 text-indigo-700"></i>
               <span>Scaner</span>
             </button>
