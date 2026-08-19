@@ -1288,9 +1288,6 @@
 
     window.setSelectedWeight = function(val) {
       window.selectedWeight = val;
-      if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-      }
       const displayLabelHeader = document.getElementById('displayLabelHeader');
       const displaySelectedWeight = document.getElementById('displaySelectedWeight');
       const displayDifferenceBadge = document.getElementById('displayDifferenceBadge');
@@ -1811,6 +1808,8 @@
       }
       if (inputTargetWeight) inputTargetWeight.addEventListener('input', window.updateKeypad);
       if (inputStep) inputStep.addEventListener('input', window.updateKeypad);
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+      if (inputLabelWeight) inputLabelWeight.addEventListener('input', window.updateKeypad);
       if (selectButtonCount) selectButtonCount.addEventListener('change', window.updateKeypad);
 
       if (btnResetAll) {
