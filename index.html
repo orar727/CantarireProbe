@@ -1172,7 +1172,6 @@
         if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition bg-amber-500 text-white border border-amber-600 shadow-md";
         if (labelModeBtnText) labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (Apasă pentru dezactivare)";
         if (displayCardWrap) displayCardWrap.className = "bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-2xl p-5 text-center text-white mb-5 shadow-lg relative overflow-hidden transition-all border border-amber-500/40";
-        if (inputLabelWeight) inputLabelWeight.focus();
       } else {
         if (labelModeFieldWrap) labelModeFieldWrap.classList.add('hidden');
         if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300";
@@ -1189,6 +1188,7 @@
       const inputLabelWeight = document.getElementById('inputLabelWeight');
       if (!inputLabelWeight) return;
       inputLabelWeight.value = val;
+      if (typeof inputLabelWeight.blur === 'function') inputLabelWeight.blur();
       window.updateKeypad();
     };
 
@@ -1288,6 +1288,9 @@
 
     window.setSelectedWeight = function(val) {
       window.selectedWeight = val;
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
       const displayLabelHeader = document.getElementById('displayLabelHeader');
       const displaySelectedWeight = document.getElementById('displaySelectedWeight');
       const displayDifferenceBadge = document.getElementById('displayDifferenceBadge');
@@ -1427,7 +1430,11 @@
         if (!checkKeepLabelWeight || !checkKeepLabelWeight.checked) {
           inputLabelWeight.value = '';
         }
-        inputLabelWeight.focus();
+        if (typeof inputLabelWeight.blur === 'function') inputLabelWeight.blur();
+      }
+
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
       }
 
       window.saveUIState();
