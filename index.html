@@ -224,6 +224,22 @@
             </div>
           </div>
 
+          <!-- Secțiune Lot & Data Expirare -->
+          <div class="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div>
+              <label for="inputSampleLot" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1">
+                <i data-lucide="boxes" class="w-3.5 h-3.5 text-indigo-600"></i> Lot Producție
+              </label>
+              <input type="text" id="inputSampleLot" placeholder="Ex: LOT-2026-08" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition">
+            </div>
+            <div>
+              <label for="inputSampleExpDate" class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-600"></i> Data Expirare
+              </label>
+              <input type="date" id="inputSampleExpDate" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition">
+            </div>
+          </div>
+
           <div class="mt-3">
             <button type="button" id="btnToggleLabelMode" onclick="window.toggleLabelMode()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300">
               <i data-lucide="tag" class="w-4 h-4"></i>
@@ -1381,6 +1397,8 @@
       const inputScaleWeight = document.getElementById('inputScaleWeight');
       const checkKeepLabelWeight = document.getElementById('checkKeepLabelWeight');
       const inputSampleDepozit = document.getElementById('inputSampleDepozit');
+      const inputSampleLot = document.getElementById('inputSampleLot');
+      const inputSampleExpDate = document.getElementById('inputSampleExpDate');
 
       let name = inputSampleName ? inputSampleName.value.trim() : '';
       if (!name) {
@@ -1388,6 +1406,8 @@
       }
 
       const depozitVal = inputSampleDepozit ? (inputSampleDepozit.value.trim() || 'Nespecificat') : 'Nespecificat';
+      const lotVal = inputSampleLot ? inputSampleLot.value.trim() : '';
+      const expDateVal = inputSampleExpDate ? inputSampleExpDate.value : '';
 
       if (depozitVal && depozitVal !== 'Nespecificat') {
         window.saveUserDeposit(depozitVal);
@@ -1431,7 +1451,9 @@
           actualWeight: actualWeightToSave,
           diff: actualWeightToSave - labelWeight,
           isLabelMode: true,
-          depozit: depozitVal
+          depozit: depozitVal,
+          lot: lotVal,
+          expDate: expDateVal
         };
       } else {
         sample = {
@@ -1441,7 +1463,9 @@
           actualWeight: window.selectedWeight,
           diff: window.selectedWeight - window.targetWeight,
           isLabelMode: false,
-          depozit: depozitVal
+          depozit: depozitVal,
+          lot: lotVal,
+          expDate: expDateVal
         };
       }
 
@@ -1470,10 +1494,7 @@
         if (!checkKeepLabelWeight || !checkKeepLabelWeight.checked) {
           if (inputLabelWeight) {
             inputLabelWeight.value = '';
-            inputLabelWeight.focus();
           }
-        } else {
-          if (inputScaleWeight) inputScaleWeight.focus();
         }
       }
 
@@ -1506,28 +1527,37 @@
           }
         }
 
-        if (!groups[key]) {
-          groups[key] = { labelWeights: [], scaleWeights: [], hasLabelMode: false };
-          order.push(key);
+        let metaInfo = [];
+        if (sample.lot) metaInfo.push(`Lot: ${sample.lot}`);
+        if (sample.expDate) metaInfo.push(`Exp: ${sample.expDate}`);
+
+        let fullKey = key;
+        if (metaInfo.length > 0) {
+          fullKey = `${key} (${metaInfo.join(', ')})`;
+        }
+
+        if (!groups[fullKey]) {
+          groups[fullKey] = { labelWeights: [], scaleWeights: [], hasLabelMode: false };
+          order.push(fullKey);
         }
 
         if (sample.isLabelMode) {
-          groups[key].hasLabelMode = true;
-          groups[key].labelWeights.push(`${sample.targetWeight}g`);
-          groups[key].scaleWeights.push(`${sample.actualWeight}g`);
+          groups[fullKey].hasLabelMode = true;
+          groups[fullKey].labelWeights.push(`${sample.targetWeight}g`);
+          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
         } else {
-          groups[key].scaleWeights.push(`${sample.actualWeight}g`);
+          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
         }
       });
 
       const lines = [];
-      order.forEach(key => {
-        const g = groups[key];
+      order.forEach(fullKey => {
+        const g = groups[fullKey];
         if (g.hasLabelMode && g.labelWeights.length > 0) {
-          lines.push(`${key}, ${g.labelWeights.join(', ')}`);
+          lines.push(`${fullKey}, ${g.labelWeights.join(', ')}`);
           lines.push(`${g.scaleWeights.join(', ')}`);
         } else {
-          lines.push(`${key}, ${g.scaleWeights.join(', ')}`);
+          lines.push(`${fullKey}, ${g.scaleWeights.join(', ')}`);
         }
       });
 
@@ -1582,9 +1612,17 @@
             ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-700 border border-slate-300">${sample.depozit}</span>`
             : '';
 
+          const lotBadge = sample.lot
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Lot: ${sample.lot}</span>`
+            : '';
+
+          const expBadge = sample.expDate
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Exp: ${sample.expDate}</span>`
+            : '';
+
           const nameCell = sample.isLabelMode
-            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>${depBadge}`
-            : `${sample.name}${depBadge}`;
+            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>${depBadge}${lotBadge}${expBadge}`
+            : `${sample.name}${depBadge}${lotBadge}${expBadge}`;
 
           const targetCell = sample.isLabelMode
             ? `<span title="Gramaj etichetă">${sample.targetWeight}g</span>`
@@ -1658,11 +1696,15 @@
     window.saveUIState = function() {
       const inputSampleName = document.getElementById('inputSampleName');
       const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const inputSampleLot = document.getElementById('inputSampleLot');
+      const inputSampleExpDate = document.getElementById('inputSampleExpDate');
 
       const state = {
         sampleName: inputSampleName ? inputSampleName.value : '',
         autoIncrement: checkAutoIncrement ? checkAutoIncrement.checked : true,
-        soundMode: window.soundMode
+        soundMode: window.soundMode,
+        lot: inputSampleLot ? inputSampleLot.value : '',
+        expDate: inputSampleExpDate ? inputSampleExpDate.value : ''
       };
       localStorage.setItem('lab_ui_state', JSON.stringify(state));
     };
@@ -1674,12 +1716,20 @@
           const state = JSON.parse(data);
           const inputSampleName = document.getElementById('inputSampleName');
           const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+          const inputSampleLot = document.getElementById('inputSampleLot');
+          const inputSampleExpDate = document.getElementById('inputSampleExpDate');
 
           if (inputSampleName && typeof state.sampleName === 'string') {
             inputSampleName.value = state.sampleName;
           }
           if (checkAutoIncrement && typeof state.autoIncrement === 'boolean') {
             checkAutoIncrement.checked = state.autoIncrement;
+          }
+          if (inputSampleLot && typeof state.lot === 'string') {
+            inputSampleLot.value = state.lot;
+          }
+          if (inputSampleExpDate && typeof state.expDate === 'string') {
+            inputSampleExpDate.value = state.expDate;
           }
           if (typeof state.soundMode === 'string') {
             window.soundMode = state.soundMode;
@@ -1902,9 +1952,13 @@
 
       const inputSampleName = document.getElementById('inputSampleName');
       const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const inputSampleLot = document.getElementById('inputSampleLot');
+      const inputSampleExpDate = document.getElementById('inputSampleExpDate');
 
       if (inputSampleName) inputSampleName.addEventListener('input', window.saveUIState);
       if (checkAutoIncrement) checkAutoIncrement.addEventListener('change', window.saveUIState);
+      if (inputSampleLot) inputSampleLot.addEventListener('input', window.saveUIState);
+      if (inputSampleExpDate) inputSampleExpDate.addEventListener('change', window.saveUIState);
 
       window.updateKeypad();
       window.loadBarcodeCatalog();
