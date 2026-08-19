@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="ICA Lab">
   <meta name="theme-color" content="#312e81">
 
-  <!-- Manifest PWA dedicat pentru Samsung Internet, Chrome si iOS -->
+  <!-- Manifest PWA dedicat -->
   <link rel="manifest" href="manifest.json">
 
   <!-- Pictograme PWA & Browser -->
@@ -79,7 +79,7 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
-  <!-- Zona exclusivă pentru printare curată (Doar Titlu + Depozit + Lista Probe) -->
+  <!-- Zona exclusivă pentru printare curată -->
   <div id="printArea" class="hidden print-only p-8 max-w-2xl mx-auto">
     <h1 id="printMainTitle" class="text-2xl font-bold border-b-2 border-slate-800 pb-3 mb-6 text-slate-900 flex justify-between items-baseline">
       <span>Raport Cântărire Probe</span>
@@ -109,6 +109,11 @@
         <button id="btnOpenCatalogModal" onclick="window.openCatalogModal()" class="bg-indigo-800 hover:bg-indigo-700 text-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition border border-indigo-700" title="Vezi și gestionează codurile de bare memorate">
           <i data-lucide="barcode" class="w-3.5 h-3.5 text-indigo-300"></i>
           <span>Catalog Coduri</span>
+        </button>
+
+        <button id="btnEnableNotifications" onclick="window.requestNotificationPermission()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow" title="Activează notificările push pe telefon pentru alimente expirate">
+          <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+          <span id="btnNotificationText">Notificări Expirare</span>
         </button>
 
         <div id="authHeaderWrap">
@@ -193,6 +198,7 @@
               Auto-numerotare
             </label>
           </div>
+
           <div class="flex gap-2 items-center mb-2.5">
             <div class="relative flex-1">
               <input type="text" id="inputSampleName" placeholder="Ex: Probă Lapte 1.5% sau PROBA-001..." class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-semibold focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition">
@@ -200,6 +206,16 @@
                 <i data-lucide="x-circle" class="w-5 h-5"></i>
               </button>
             </div>
+            
+            <!-- Buton Glisant Switch ACUM | EXP -->
+            <div class="shrink-0 flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-300" title="Glisează pentru a alege momentul alertării: ACUM (procesat azi) sau EXP (notificare la expirare)">
+              <div class="relative inline-flex items-center bg-slate-200 p-0.5 rounded-lg cursor-pointer select-none" onclick="window.toggleAlertModeGlisat()">
+                <div id="sliderBgGlisat" class="absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-indigo-600 rounded-md transition-all duration-200 shadow-sm left-0.5"></div>
+                <button type="button" id="lblAlertAcum" class="relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-white transition-colors duration-200">ACUM</button>
+                <button type="button" id="lblAlertExp" class="relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-slate-600 transition-colors duration-200">EXP</button>
+              </div>
+            </div>
+
             <button type="button" onclick="window.openBarcodeScanner()" class="px-3 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition border border-indigo-200 shadow-sm" title="Scanează Cod de Bare sau QR cu camera">
               <i data-lucide="qr-code" class="w-4 h-4 text-indigo-700"></i>
               <span>Scaner</span>
@@ -621,7 +637,7 @@
   </div>
 
   <script>
-    // Explicit global variables bound to window to guarantee cross-script accessibility
+    // Explicit global state variables
     window.targetWeight = 1000;
     window.selectedWeight = 1000;
     window.step = 5;
@@ -635,11 +651,41 @@
     window.labelModeActive = false;
     window.activeDepozitFilter = 'Toate';
     window.soundMode = 'full'; 
+    window.sampleAlertMode = 'ACUM';
     window.audioCtx = null;
     window.html5QrCodeInstance = null;
 
+    /* Toggles the sliding switch between ACUM and EXP mode */
+    function toggleAlertModeGlisat() {
+      const sliderBg = document.getElementById('sliderBgGlisat');
+      const lblAcum = document.getElementById('lblAlertAcum');
+      const lblExp = document.getElementById('lblAlertExp');
+
+      if (window.sampleAlertMode === 'ACUM') {
+        window.sampleAlertMode = 'EXP';
+        if (sliderBg) {
+          sliderBg.style.left = 'calc(50% + 1px)';
+          sliderBg.className = 'absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-amber-600 rounded-md transition-all duration-200 shadow-sm';
+        }
+        if (lblAcum) lblAcum.className = 'relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-slate-600 transition-colors duration-200';
+        if (lblExp) lblExp.className = 'relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-white transition-colors duration-200';
+        showToast("Mod Notificare setat: EXP (Notificare Push la expirare)", "info");
+      } else {
+        window.sampleAlertMode = 'ACUM';
+        if (sliderBg) {
+          sliderBg.style.left = '0.5px';
+          sliderBg.className = 'absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] bg-indigo-600 rounded-md transition-all duration-200 shadow-sm';
+        }
+        if (lblAcum) lblAcum.className = 'relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-white transition-colors duration-200';
+        if (lblExp) lblExp.className = 'relative z-10 px-2.5 py-1 text-[11px] font-extrabold text-slate-600 transition-colors duration-200';
+        showToast("Mod Notificare setat: ACUM (Fără notificare la expirare)", "info");
+      }
+      saveUIState();
+    }
+    window.toggleAlertModeGlisat = toggleAlertModeGlisat;
+
     /* Renders custom deposits saved by user as clickable chips */
-    window.renderUserDepositChips = function() {
+    function renderUserDepositChips() {
       const wrap = document.getElementById('userDepositChipsWrap');
       const container = document.getElementById('userDepositChips');
       const inputDep = document.getElementById('inputSampleDepozit');
@@ -667,7 +713,7 @@
         labelSpan.onclick = function() {
           if (inputDep) {
             inputDep.value = dep;
-            window.renderUserDepositChips();
+            renderUserDepositChips();
           }
         };
 
@@ -678,7 +724,7 @@
         delBtn.title = "Șterge din lista memorată";
         delBtn.onclick = function(e) {
           e.stopPropagation();
-          window.removeUserDeposit(dep);
+          removeUserDeposit(dep);
         };
 
         chip.appendChild(labelSpan);
@@ -686,10 +732,11 @@
         container.appendChild(chip);
       });
       if (window.lucide) window.lucide.createIcons();
-    };
+    }
+    window.renderUserDepositChips = renderUserDepositChips;
 
     /* Saves new deposit to local user list */
-    window.saveUserDeposit = function(depName) {
+    function saveUserDeposit(depName) {
       if (!depName) return;
       const clean = depName.trim();
       if (!clean || clean === 'Nespecificat') return;
@@ -705,12 +752,13 @@
           window.saveUserDepositsToCloud();
         }
       }
-      window.renderUserDepositChips();
-      window.updateDepozitFiltersAndSuggestions();
-    };
+      renderUserDepositChips();
+      updateDepozitFiltersAndSuggestions();
+    }
+    window.saveUserDeposit = saveUserDeposit;
 
     /* Removes a deposit chip */
-    window.removeUserDeposit = function(depName) {
+    function removeUserDeposit(depName) {
       if (!window.userDepositsList) return;
       window.userDepositsList = window.userDepositsList.filter(d => d.toLowerCase() !== depName.toLowerCase());
       localStorage.setItem('lab_user_deposits', JSON.stringify(window.userDepositsList));
@@ -718,12 +766,13 @@
       if (typeof window.saveUserDepositsToCloud === 'function') {
         window.saveUserDepositsToCloud();
       }
-      window.renderUserDepositChips();
-      window.updateDepozitFiltersAndSuggestions();
-      window.showToast(`Depozitul "${depName}" a fost eliminat.`, "info");
-    };
+      renderUserDepositChips();
+      updateDepozitFiltersAndSuggestions();
+      showToast(`Depozitul "${depName}" a fost eliminat.`, "info");
+    }
+    window.removeUserDeposit = removeUserDeposit;
 
-    window.loadUserDeposits = function() {
+    function loadUserDeposits() {
       const data = localStorage.getItem('lab_user_deposits');
       if (data) {
         try {
@@ -732,10 +781,11 @@
           window.userDepositsList = [];
         }
       }
-      window.renderUserDepositChips();
-    };
+      renderUserDepositChips();
+    }
+    window.loadUserDeposits = loadUserDeposits;
 
-    window.updateDepozitFiltersAndSuggestions = function() {
+    function updateDepozitFiltersAndSuggestions() {
       const datalist = document.getElementById('depositSuggestionsList');
       const filterContainer = document.getElementById('depozitFilterButtons');
       const uniqueDeposits = [];
@@ -764,6 +814,8 @@
 
       if (filterContainer) {
         filterContainer.innerHTML = '';
+        
+        // Buton Filtrare "Toate"
         const allBtn = document.createElement('button');
         allBtn.className = window.activeDepozitFilter === 'Toate'
           ? "px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-sm transition"
@@ -771,10 +823,24 @@
         allBtn.innerText = "Toate";
         allBtn.onclick = function() {
           window.activeDepozitFilter = 'Toate';
-          window.renderTable();
-          window.updateStatistics();
+          renderTable();
+          updateStatistics();
         };
         filterContainer.appendChild(allBtn);
+
+        // Buton Filtrare "🔔 Doar EXP"
+        const expBtn = document.createElement('button');
+        expBtn.className = window.activeDepozitFilter === 'EXP_ONLY'
+          ? "px-3 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-sm transition flex items-center gap-1"
+          : "px-3 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 transition flex items-center gap-1";
+        expBtn.innerHTML = `<i data-lucide="bell" class="w-3 h-3"></i> Doar EXP`;
+        expBtn.title = "Afișează doar probele programate pentru notificare la expirare";
+        expBtn.onclick = function() {
+          window.activeDepozitFilter = 'EXP_ONLY';
+          renderTable();
+          updateStatistics();
+        };
+        filterContainer.appendChild(expBtn);
 
         uniqueDeposits.forEach(dep => {
           const btn = document.createElement('button');
@@ -784,36 +850,481 @@
           btn.innerText = dep;
           btn.onclick = function() {
             window.activeDepozitFilter = dep;
-            window.renderTable();
-            window.updateStatistics();
+            renderTable();
+            updateStatistics();
           };
           filterContainer.appendChild(btn);
         });
       }
-    };
+    }
+    window.updateDepozitFiltersAndSuggestions = updateDepozitFiltersAndSuggestions;
 
-    window.openMapEanModal = function(ean) {
+    function getFilteredSamples() {
+      if (!window.activeDepozitFilter || window.activeDepozitFilter === 'Toate') {
+        return window.samplesList;
+      }
+      if (window.activeDepozitFilter === 'EXP_ONLY') {
+        return window.samplesList.filter(s => s.alertMode === 'EXP');
+      }
+      return window.samplesList.filter(s => (s.depozit || 'Nespecificat') === window.activeDepozitFilter);
+    }
+    window.getFilteredSamples = getFilteredSamples;
+
+    function getGroupedFormattedLines() {
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const autoInc = checkAutoIncrement ? checkAutoIncrement.checked : true;
+      const groups = {};
+      const order = [];
+
+      const filteredList = getFilteredSamples();
+
+      filteredList.forEach(sample => {
+        let name = sample.name.trim();
+        let key = name;
+        
+        if (autoInc) {
+          const match = name.match(/^(.*?)([\s\-_]*\d+)$/);
+          if (match && match[1].trim().length > 0) {
+            key = match[1].trim();
+          }
+        }
+
+        let metaInfo = [];
+        if (sample.lot) metaInfo.push(`Lot: ${sample.lot}`);
+        if (sample.expDate) {
+          const parts = sample.expDate.split('-');
+          if (parts.length === 3) {
+            metaInfo.push(`${parts[2]}.${parts[1]}.${parts[0]}`);
+          } else {
+            metaInfo.push(sample.expDate);
+          }
+        }
+
+        let fullKey = key;
+        if (metaInfo.length > 0) {
+          fullKey = `${key} (${metaInfo.join(', ')})`;
+        }
+
+        if (!groups[fullKey]) {
+          groups[fullKey] = { labelWeights: [], scaleWeights: [], hasLabelMode: false };
+          order.push(fullKey);
+        }
+
+        if (sample.isLabelMode) {
+          groups[fullKey].hasLabelMode = true;
+          groups[fullKey].labelWeights.push(`${sample.targetWeight}g`);
+          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
+        } else {
+          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
+        }
+      });
+
+      const lines = [];
+      order.forEach(fullKey => {
+        const g = groups[fullKey];
+        if (g.hasLabelMode && g.labelWeights.length > 0) {
+          lines.push(`${fullKey}, ${g.labelWeights.join(', ')}`);
+          lines.push(`${g.scaleWeights.join(', ')}`);
+        } else {
+          lines.push(`${fullKey}, ${g.scaleWeights.join(', ')}`);
+        }
+      });
+
+      return lines;
+    }
+    window.getGroupedFormattedLines = getGroupedFormattedLines;
+
+    function renderTable() {
+      const tableBody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+      const printSimpleList = document.getElementById('printSimpleList');
+      const printSubtitleDepozit = document.getElementById('printSubtitleDepozit');
+      const previewGroupedText = document.getElementById('previewGroupedText');
+      const savedCountText = document.getElementById('savedCountText');
+      if (!tableBody) return;
+
+      if (printSubtitleDepozit) {
+        if (window.activeDepozitFilter && window.activeDepozitFilter !== 'Toate') {
+          printSubtitleDepozit.innerText = window.activeDepozitFilter;
+        } else {
+          printSubtitleDepozit.innerText = '';
+        }
+      }
+
+      updateDepozitFiltersAndSuggestions();
+
+      tableBody.innerHTML = '';
+      if (printSimpleList) printSimpleList.innerHTML = '';
+
+      const filteredList = getFilteredSamples();
+      const groupedLines = getGroupedFormattedLines();
+
+      if (previewGroupedText) {
+        previewGroupedText.innerText = groupedLines.length > 0 ? groupedLines.join('\n') : '(Nicio probă adăugată în această vizualizare)';
+      }
+
+      if (filteredList.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+      } else {
+        if (emptyState) emptyState.classList.add('hidden');
+        
+        filteredList.forEach((sample, index) => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100 animate-pop";
+          
+          const diffBadge = sample.diff === 0 
+            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0g</span>`
+            : sample.diff > 0 
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">+${sample.diff}g</span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${sample.diff}g</span>`;
+
+          const depBadge = (sample.depozit && sample.depozit !== 'Nespecificat')
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-700 border border-slate-300">${sample.depozit}</span>`
+            : '';
+
+          const lotBadge = sample.lot
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Lot: ${sample.lot}</span>`
+            : '';
+
+          let formattedExpDate = '';
+          if (sample.expDate) {
+            const parts = sample.expDate.split('-');
+            formattedExpDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : sample.expDate;
+          }
+
+          const expBadge = formattedExpDate
+            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">${formattedExpDate}</span>`
+            : '';
+
+          const alertBadge = (sample.alertMode === 'EXP')
+            ? `<span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300" title="Proba va trimite notificare de expirare"><i data-lucide="bell" class="w-2.5 h-2.5"></i>EXP</span>`
+            : '';
+
+          const nameCell = sample.isLabelMode
+            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>${depBadge}${lotBadge}${expBadge}${alertBadge}`
+            : `${sample.name}${depBadge}${lotBadge}${expBadge}${alertBadge}`;
+
+          const targetCell = sample.isLabelMode
+            ? `<span title="Gramaj etichetă">${sample.targetWeight}g</span>`
+            : `${sample.targetWeight}g`;
+
+          tr.innerHTML = `
+            <td class="py-2.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
+            <td class="py-2.5 px-3 font-bold text-slate-800">${nameCell}</td>
+            <td class="py-2.5 px-3 text-right font-semibold text-slate-500">${targetCell}</td>
+            <td class="py-2.5 px-3 text-right font-black text-indigo-900 text-sm">${sample.actualWeight}g</td>
+            <td class="py-2.5 px-3 text-center">${diffBadge}</td>
+            <td class="py-2.5 px-3 text-center no-print">
+              <button onclick="window.deleteSample(${sample.id})" class="text-slate-300 hover:text-red-600 transition p-1">
+                <i data-lucide="trash" class="w-4 h-4"></i>
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        if (printSimpleList) {
+          groupedLines.forEach(line => {
+            const printDiv = document.createElement('div');
+            printDiv.className = "print-item py-2 border-b border-slate-300 font-semibold text-slate-900 text-lg";
+            printDiv.innerText = line;
+            printSimpleList.appendChild(printDiv);
+          });
+        }
+      }
+
+      if (savedCountText) savedCountText.innerText = `${window.samplesList.length} probe salvate local`;
+      if (window.lucide) window.lucide.createIcons();
+    }
+    window.renderTable = renderTable;
+
+    function deleteSample(id) {
+      window.samplesList = window.samplesList.filter(s => s.id !== id);
+      saveToLocalStorage();
+      renderTable();
+      updateStatistics();
+      showToast("Proba a fost ștearsă", "info");
+    }
+    window.deleteSample = deleteSample;
+
+    function updateStatistics() {
+      const statTotalCount = document.getElementById('statTotalCount');
+      const statAverageWeight = document.getElementById('statAverageWeight');
+      const statAverageDiff = document.getElementById('statAverageDiff');
+
+      const filteredList = getFilteredSamples();
+      const total = filteredList.length;
+      if (statTotalCount) statTotalCount.innerText = total;
+
+      if (total === 0) {
+        if (statAverageWeight) statAverageWeight.innerText = "0g";
+        if (statAverageDiff) statAverageDiff.innerText = "0g";
+        return;
+      }
+
+      const sumWeight = filteredList.reduce((acc, curr) => acc + curr.actualWeight, 0);
+      const avgWeight = (sumWeight / total).toFixed(1);
+      if (statAverageWeight) statAverageWeight.innerText = `${avgWeight}g`;
+
+      const sumDiff = filteredList.reduce((acc, curr) => acc + curr.diff, 0);
+      const avgDiff = (sumDiff / total).toFixed(1);
+      if (statAverageDiff) statAverageDiff.innerText = `${avgDiff > 0 ? '+' : ''}${avgDiff}g`;
+    }
+    window.updateStatistics = updateStatistics;
+
+    function saveToLocalStorage() {
+      localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
+    }
+    window.saveToLocalStorage = saveToLocalStorage;
+
+    function saveUIState() {
+      const inputSampleName = document.getElementById('inputSampleName');
+      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+      const inputSampleLot = document.getElementById('inputSampleLot');
+      const inputSampleExpDate = document.getElementById('inputSampleExpDate');
+
+      const state = {
+        sampleName: inputSampleName ? inputSampleName.value : '',
+        autoIncrement: checkAutoIncrement ? checkAutoIncrement.checked : true,
+        soundMode: window.soundMode,
+        sampleAlertMode: window.sampleAlertMode,
+        lot: inputSampleLot ? inputSampleLot.value : '',
+        expDate: inputSampleExpDate ? inputSampleExpDate.value : ''
+      };
+      localStorage.setItem('lab_ui_state', JSON.stringify(state));
+    }
+    window.saveUIState = saveUIState;
+
+    function loadUIState() {
+      const data = localStorage.getItem('lab_ui_state');
+      if (data) {
+        try {
+          const state = JSON.parse(data);
+          const inputSampleName = document.getElementById('inputSampleName');
+          const checkAutoIncrement = document.getElementById('checkAutoIncrement');
+          const inputSampleLot = document.getElementById('inputSampleLot');
+          const inputSampleExpDate = document.getElementById('inputSampleExpDate');
+
+          if (inputSampleName && typeof state.sampleName === 'string') {
+            inputSampleName.value = state.sampleName;
+          }
+          if (checkAutoIncrement && typeof state.autoIncrement === 'boolean') {
+            checkAutoIncrement.checked = state.autoIncrement;
+          }
+          if (inputSampleLot && typeof state.lot === 'string') {
+            inputSampleLot.value = state.lot;
+          }
+          if (inputSampleExpDate && typeof state.expDate === 'string') {
+            inputSampleExpDate.value = state.expDate;
+          }
+          if (typeof state.soundMode === 'string') {
+            window.soundMode = state.soundMode;
+          }
+          if (typeof state.sampleAlertMode === 'string') {
+            window.sampleAlertMode = state.sampleAlertMode;
+            if (window.sampleAlertMode === 'EXP') {
+              window.sampleAlertMode = 'ACUM';
+              toggleAlertModeGlisat();
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      updateSoundButton();
+    }
+    window.loadUIState = loadUIState;
+
+    function updateSoundButton() {
+      const btn = document.getElementById('btnToggleSound');
+      if (!btn) return;
+
+      const svgVolumeFull = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+      const svgVibrate = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>`;
+      const svgSilent = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>`;
+
+      if (window.soundMode === 'full') {
+        btn.innerHTML = svgVolumeFull;
+        btn.className = "bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700";
+        btn.title = "Sunet + vibrație la salvare (click: doar vibrație)";
+      } else if (window.soundMode === 'vibrate') {
+        btn.innerHTML = svgVibrate;
+        btn.className = "bg-amber-700 hover:bg-amber-600 text-amber-100 p-2 rounded-lg transition border border-amber-600";
+        btn.title = "Doar vibrație la salvare (click: silențios)";
+      } else {
+        btn.innerHTML = svgSilent;
+        btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition border border-slate-600";
+        btn.title = "Silențios (click: sunet + vibrație)";
+      }
+    }
+    window.updateSoundButton = updateSoundButton;
+
+    function toggleSound() {
+      if (window.soundMode === 'full') {
+        window.soundMode = 'vibrate';
+      } else if (window.soundMode === 'vibrate') {
+        window.soundMode = 'silent';
+      } else {
+        window.soundMode = 'full';
+      }
+      updateSoundButton();
+      saveUIState();
+      playConfirmSound();
+    }
+    window.toggleSound = toggleSound;
+
+    function playConfirmSound() {
+      if (window.soundMode === 'silent') return;
+
+      if (window.soundMode === 'full') {
+        try {
+          if (!window.audioCtx) {
+            window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (window.audioCtx.state === 'suspended') {
+            window.audioCtx.resume();
+          }
+
+          const now = window.audioCtx.currentTime;
+          const notes = [
+            { freq: 880, start: 0, dur: 0.09 },
+            { freq: 1200, start: 0.1, dur: 0.12 }
+          ];
+
+          notes.forEach(note => {
+            const osc = window.audioCtx.createOscillator();
+            const gain = window.audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note.freq, now + note.start);
+            gain.gain.setValueAtTime(0, now + note.start);
+            gain.gain.linearRampToValueAtTime(0.25, now + note.start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + note.start + note.dur);
+            osc.connect(gain);
+            gain.connect(window.audioCtx.destination);
+            osc.start(now + note.start);
+            osc.stop(now + note.start + note.dur + 0.02);
+          });
+        } catch (e) {
+          console.error('Eroare audio:', e);
+        }
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate(60);
+      }
+    }
+    window.playConfirmSound = playConfirmSound;
+
+    function loadFromLocalStorage() {
+      const data = localStorage.getItem('lab_samples_data');
+      if (data) {
+        try {
+          window.samplesList = JSON.parse(data);
+          window.samplesList.forEach(s => {
+            const match = s.name.match(/PROBA-(\d+)/);
+            if (match) {
+              const num = parseInt(match[1]);
+              if (num >= window.sampleCounter) window.sampleCounter = num + 1;
+            }
+          });
+          renderTable();
+          updateStatistics();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    window.loadFromLocalStorage = loadFromLocalStorage;
+
+    function exportCSV() {
+      const filtered = getFilteredSamples();
+      if (filtered.length === 0) {
+        showToast("Nu există probe în vizualizarea curentă!", "error");
+        return;
+      }
+
+      const lines = getGroupedFormattedLines();
+      const csvContent = "\uFEFF" + lines.join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      const filterSuffix = window.activeDepozitFilter !== 'Toate' ? `_${window.activeDepozitFilter.replace(/\s+/g, '_')}` : '';
+      link.setAttribute('download', `Comanda_Probe${filterSuffix}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("Fișier CSV descărcat cu succes!");
+    }
+    window.exportCSV = exportCSV;
+
+    function exportClipboard() {
+      const filtered = getFilteredSamples();
+      if (filtered.length === 0) {
+        showToast("Nu există probe de copiat!", "error");
+        return;
+      }
+
+      const lines = getGroupedFormattedLines();
+      const textContent = lines.join('\n');
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = textContent;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast("Datele au fost copiate! Apasă Ctrl+V.");
+        } else {
+          showToast("Nu s-a putut copia textul", "error");
+        }
+      } catch (err) {
+        showToast("Eroare la copiere!", "error");
+      }
+      
+      document.body.removeChild(textarea);
+    }
+    window.exportClipboard = exportClipboard;
+
+    function closeConfirmModal() {
+      const confirmModal = document.getElementById('confirmModal');
+      if (confirmModal) {
+        confirmModal.classList.add('opacity-0');
+        setTimeout(() => confirmModal.classList.add('hidden'), 200);
+      }
+    }
+    window.closeConfirmModal = closeConfirmModal;
+
+    function openMapEanModal(ean) {
       window.pendingScannedEan = ean;
       const codeDisplay = document.getElementById('mapEanCodeDisplay');
       if (codeDisplay) codeDisplay.innerText = `Cod scanat: ${ean}`;
-      window.renderMapEanProductList('');
+      renderMapEanProductList('');
       const modal = document.getElementById('mapEanModal');
       if (modal) {
         modal.classList.remove('hidden');
         setTimeout(() => modal.classList.remove('opacity-0'), 10);
       }
-    };
+    }
+    window.openMapEanModal = openMapEanModal;
 
-    window.closeMapEanModal = function() {
+    function closeMapEanModal() {
       const modal = document.getElementById('mapEanModal');
       if (modal) {
         modal.classList.add('opacity-0');
         setTimeout(() => modal.classList.add('hidden'), 200);
       }
       window.pendingScannedEan = null;
-    };
+    }
+    window.closeMapEanModal = closeMapEanModal;
 
-    window.renderMapEanProductList = function(searchQuery) {
+    function renderMapEanProductList(searchQuery) {
       const container = document.getElementById('mapEanProductsList');
       if (!container) return;
       container.innerHTML = '';
@@ -855,18 +1366,20 @@
           </div>
           <span class="text-xs font-bold text-indigo-600 bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white px-2 py-1 rounded-lg transition">Selectează</span>`;
         btn.onclick = function() {
-          window.associateEanToExistingProduct(pName, tWeight);
+          associateEanToExistingProduct(pName, tWeight);
         };
         container.appendChild(btn);
       });
-    };
+    }
+    window.renderMapEanProductList = renderMapEanProductList;
 
-    window.filterMapEanProducts = function() {
+    function filterMapEanProducts() {
       const input = document.getElementById('mapEanSearchInput');
-      window.renderMapEanProductList(input ? input.value : '');
-    };
+      renderMapEanProductList(input ? input.value : '');
+    }
+    window.filterMapEanProducts = filterMapEanProducts;
 
-    window.associateEanToExistingProduct = function(productName, targetWeight) {
+    function associateEanToExistingProduct(productName, targetWeight) {
       if (!window.pendingScannedEan) return;
       const ean = window.pendingScannedEan;
 
@@ -875,32 +1388,34 @@
         targetWeight: targetWeight || window.targetWeight
       };
 
-      window.saveBarcodeCatalog();
-      window.renderBarcodeCatalog();
+      saveBarcodeCatalog();
+      renderBarcodeCatalog();
 
       const inputSampleName = document.getElementById('inputSampleName');
       if (inputSampleName) inputSampleName.value = productName;
-      if (targetWeight) window.setBaseTarget(targetWeight);
+      if (targetWeight) setBaseTarget(targetWeight);
 
-      window.closeMapEanModal();
-      window.showToast(`Codul ${ean} a fost asociat cu succes la "${productName}"!`);
-      window.playConfirmSound();
-    };
+      closeMapEanModal();
+      showToast(`Codul ${ean} a fost asociat cu succes la "${productName}"!`);
+      playConfirmSound();
+    }
+    window.associateEanToExistingProduct = associateEanToExistingProduct;
 
-    window.createProductFromMapModal = function() {
+    function createProductFromMapModal() {
       const ean = window.pendingScannedEan;
-      window.closeMapEanModal();
-      window.closeCatalogModal();
+      closeMapEanModal();
+      closeCatalogModal();
       const inputSampleName = document.getElementById('inputSampleName');
       if (inputSampleName) {
         inputSampleName.value = ean;
         inputSampleName.focus();
       }
       window.pendingBarcodeToMap = ean;
-      window.showToast(`Tastează numele dorit pentru codul ${ean} și apasă Adaugă Proba.`, "info");
-    };
+      showToast(`Tastează numele dorit pentru codul ${ean} și apasă Adaugă Proba.`, "info");
+    }
+    window.createProductFromMapModal = createProductFromMapModal;
 
-    window.showToast = function(msg, type) {
+    function showToast(msg, type) {
       type = type || "success";
       const toast = document.getElementById('toastNotification');
       const toastMsg = document.getElementById('toastMessage');
@@ -926,9 +1441,10 @@
       setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
       }, 2500);
-    };
+    }
+    window.showToast = showToast;
 
-    window.loadBarcodeCatalog = function() {
+    function loadBarcodeCatalog() {
       const data = localStorage.getItem('lab_barcode_catalog');
       if (data) {
         try {
@@ -937,31 +1453,35 @@
           window.barcodeCatalog = {};
         }
       }
-    };
+    }
+    window.loadBarcodeCatalog = loadBarcodeCatalog;
 
-    window.saveBarcodeCatalog = function() {
+    function saveBarcodeCatalog() {
       localStorage.setItem('lab_barcode_catalog', JSON.stringify(window.barcodeCatalog));
       if (typeof window.saveBarcodeCatalogToCloud === 'function') {
         window.saveBarcodeCatalogToCloud();
       }
-    };
+    }
+    window.saveBarcodeCatalog = saveBarcodeCatalog;
 
-    window.openCatalogModal = function() {
-      window.renderBarcodeCatalog();
+    function openCatalogModal() {
+      renderBarcodeCatalog();
       const modal = document.getElementById('catalogModal');
       if (!modal) return;
       modal.classList.remove('hidden');
       setTimeout(() => modal.classList.remove('opacity-0'), 10);
-    };
+    }
+    window.openCatalogModal = openCatalogModal;
 
-    window.closeCatalogModal = function() {
+    function closeCatalogModal() {
       const modal = document.getElementById('catalogModal');
       if (!modal) return;
       modal.classList.add('opacity-0');
       setTimeout(() => modal.classList.add('hidden'), 200);
-    };
+    }
+    window.closeCatalogModal = closeCatalogModal;
 
-    window.renderBarcodeCatalog = function() {
+    function renderBarcodeCatalog() {
       const container = document.getElementById('catalogGroupedContainer');
       const emptyState = document.getElementById('catalogEmptyState');
       const datalist = document.getElementById('existingProductsList');
@@ -1018,7 +1538,7 @@
         addEanBtn.className = "px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-md text-[11px] font-bold border border-indigo-200 transition flex items-center gap-1";
         addEanBtn.innerHTML = `<i data-lucide="plus" class="w-3 h-3"></i> Adaugă EAN`;
         addEanBtn.onclick = function() {
-          window.quickAddEanToProduct(prodName, prod.targetWeight);
+          quickAddEanToProduct(prodName, prod.targetWeight);
         };
 
         topDiv.appendChild(titleBox);
@@ -1041,7 +1561,7 @@
           delBtn.title = "Șterge acest cod EAN";
           delBtn.innerHTML = `<i data-lucide="x" class="w-3 h-3"></i>`;
           delBtn.onclick = function() {
-            window.deleteBarcodeMapping(code);
+            deleteBarcodeMapping(code);
           };
 
           badge.appendChild(delBtn);
@@ -1056,9 +1576,10 @@
       });
 
       if (window.lucide) window.lucide.createIcons();
-    };
+    }
+    window.renderBarcodeCatalog = renderBarcodeCatalog;
 
-    window.quickAddEanToProduct = function(prodName, targetWeight) {
+    function quickAddEanToProduct(prodName, targetWeight) {
       const catInputName = document.getElementById('catInputName');
       const catInputWeight = document.getElementById('catInputWeight');
       const catInputEan = document.getElementById('catInputEan');
@@ -1070,10 +1591,11 @@
         catInputEan.focus();
       }
 
-      window.showToast(`Scrie noul cod EAN pentru "${prodName}" și apasă Salvează!`, "info");
-    };
+      showToast(`Scrie noul cod EAN pentru "${prodName}" și apasă Salvează!`, "info");
+    }
+    window.quickAddEanToProduct = quickAddEanToProduct;
 
-    window.addManualCatalogMapping = function() {
+    function addManualCatalogMapping() {
       const catInputName = document.getElementById('catInputName');
       const catInputEan = document.getElementById('catInputEan');
       const catInputWeight = document.getElementById('catInputWeight');
@@ -1083,7 +1605,7 @@
       const weight = catInputWeight ? parseFloat(catInputWeight.value) : null;
 
       if (!name || !eanStr) {
-        window.showToast("Introdu numele produsului și cel puțin un cod EAN!", "error");
+        showToast("Introdu numele produsului și cel puțin un cod EAN!", "error");
         return;
       }
 
@@ -1096,21 +1618,23 @@
         };
       });
 
-      window.saveBarcodeCatalog();
-      window.renderBarcodeCatalog();
+      saveBarcodeCatalog();
+      renderBarcodeCatalog();
 
       if (catInputEan) catInputEan.value = '';
-      window.showToast(`Asociat cu succes (${eanList.length} cod(uri) -> ${name})!`);
-    };
+      showToast(`Asociat cu succes (${eanList.length} cod(uri) -> ${name})!`);
+    }
+    window.addManualCatalogMapping = addManualCatalogMapping;
 
-    window.deleteBarcodeMapping = function(code) {
+    function deleteBarcodeMapping(code) {
       delete window.barcodeCatalog[code];
-      window.saveBarcodeCatalog();
-      window.renderBarcodeCatalog();
-      window.showToast(`Codul EAN ${code} a fost ștears.`, "info");
-    };
+      saveBarcodeCatalog();
+      renderBarcodeCatalog();
+      showToast(`Codul EAN ${code} a fost ștears.`, "info");
+    }
+    window.deleteBarcodeMapping = deleteBarcodeMapping;
 
-    window.openBarcodeScanner = function() {
+    function openBarcodeScanner() {
       const modal = document.getElementById('scannerModal');
       if (!modal) return;
       modal.classList.remove('hidden');
@@ -1128,12 +1652,13 @@
         config,
         onScanSuccess
       ).catch(err => {
-        window.showToast("Nu s-a putut accesa camera pentru scanare.", "error");
-        window.closeBarcodeScanner();
+        showToast("Nu s-a putut accesa camera pentru scanare.", "error");
+        closeBarcodeScanner();
       });
-    };
+    }
+    window.openBarcodeScanner = openBarcodeScanner;
 
-    window.closeBarcodeScanner = function() {
+    function closeBarcodeScanner() {
       const modal = document.getElementById('scannerModal');
       if (modal) {
         modal.classList.add('opacity-0');
@@ -1144,10 +1669,11 @@
           window.html5QrCodeInstance.clear();
         }).catch(() => {});
       }
-    };
+    }
+    window.closeBarcodeScanner = closeBarcodeScanner;
 
     function onScanSuccess(decodedText) {
-      window.playConfirmSound();
+      playConfirmSound();
       const cleanText = decodedText.trim();
       let extractedWeight = null;
       const inputSampleName = document.getElementById('inputSampleName');
@@ -1162,41 +1688,41 @@
 
       if (extractedWeight) {
         if (!window.labelModeActive) {
-          window.toggleLabelMode();
+          toggleLabelMode();
         }
         if (inputLabelWeight) {
           inputLabelWeight.value = extractedWeight;
-          window.updateKeypad();
+          updateKeypad();
         }
-        window.showToast(`EAN Cântar detectat! Gramaj etichetă: ${extractedWeight}g`);
+        showToast(`EAN Cântar detectat! Gramaj etichetă: ${extractedWeight}g`);
       } else {
         if (window.barcodeCatalog[cleanText]) {
           const matched = window.barcodeCatalog[cleanText];
           if (inputSampleName) inputSampleName.value = matched.name;
           window.pendingBarcodeToMap = null;
           if (matched.targetWeight) {
-            window.setBaseTarget(matched.targetWeight);
+            setBaseTarget(matched.targetWeight);
           }
-          window.saveUIState();
-          window.showToast(`Produs Recunoscut: ${matched.name}`);
+          saveUIState();
+          showToast(`Produs Recunoscut: ${matched.name}`);
         } else {
           if (Object.keys(window.barcodeCatalog).length > 0) {
-            window.closeBarcodeScanner();
-            window.openMapEanModal(cleanText);
+            closeBarcodeScanner();
+            openMapEanModal(cleanText);
             return;
           } else {
             window.pendingBarcodeToMap = cleanText;
             if (inputSampleName) inputSampleName.value = cleanText;
-            window.saveUIState();
-            window.showToast(`Cod nou: ${cleanText}! Tastează numele și se va salva.`, "info");
+            saveUIState();
+            showToast(`Cod nou: ${cleanText}! Tastează numele și se va salva.`, "info");
           }
         }
       }
 
-      window.closeBarcodeScanner();
+      closeBarcodeScanner();
     }
 
-    window.toggleLabelMode = function() {
+    function toggleLabelMode() {
       window.labelModeActive = !window.labelModeActive;
       const labelModeFieldWrap = document.getElementById('labelModeFieldWrap');
       const btnToggleLabelMode = document.getElementById('btnToggleLabelMode');
@@ -1231,114 +1757,48 @@
         if (inputScaleWeight) inputScaleWeight.value = '';
       }
 
-      window.updateKeypad();
+      updateKeypad();
       if (window.lucide) window.lucide.createIcons();
-    };
+    }
+    window.toggleLabelMode = toggleLabelMode;
 
-    window.setLabelWeightPreset = function(val) {
+    function setLabelWeightPreset(val) {
       const inputLabelWeight = document.getElementById('inputLabelWeight');
       const inputScaleWeight = document.getElementById('inputScaleWeight');
       if (!inputLabelWeight) return;
       inputLabelWeight.value = val;
       if (inputScaleWeight) inputScaleWeight.focus();
-      window.updateKeypad();
-    };
+      updateKeypad();
+    }
+    window.setLabelWeightPreset = setLabelWeightPreset;
 
-    window.setBaseTarget = function(val) {
+    function setBaseTarget(val) {
       window.targetWeight = val;
       const inputTargetWeight = document.getElementById('inputTargetWeight');
       if (inputTargetWeight) inputTargetWeight.value = val;
-      window.updateKeypad();
-    };
+      updateKeypad();
+    }
+    window.setBaseTarget = setBaseTarget;
 
-    window.setStep = function(val) {
+    function setStep(val) {
       window.step = val;
       const inputStep = document.getElementById('inputStep');
       if (inputStep) inputStep.value = val;
-      window.updateKeypad();
-    };
+      updateKeypad();
+    }
+    window.setStep = setStep;
 
-    window.clearSampleName = function() {
+    function clearSampleName() {
       const inputSampleName = document.getElementById('inputSampleName');
       if (inputSampleName) {
         inputSampleName.value = '';
         inputSampleName.focus();
       }
-      window.saveUIState();
-    };
+      saveUIState();
+    }
+    window.clearSampleName = clearSampleName;
 
-    window.updateKeypad = function() {
-      const inputTargetWeight = document.getElementById('inputTargetWeight');
-      const inputStep = document.getElementById('inputStep');
-      const selectButtonCount = document.getElementById('selectButtonCount');
-      const inputLabelWeight = document.getElementById('inputLabelWeight');
-      const targetWeightValueText = document.getElementById('targetWeightValueText');
-      const containerMinusButtons = document.getElementById('containerMinusButtons');
-      const containerPlusButtons = document.getElementById('containerPlusButtons');
-      const btnExactTarget = document.getElementById('btnExactTarget');
-
-      window.step = parseFloat(inputStep ? inputStep.value : 5) || 5;
-      window.buttonCountPerSide = parseInt(selectButtonCount ? selectButtonCount.value : 6) || 6;
-
-      let currentBaseWeight = parseFloat(inputTargetWeight ? inputTargetWeight.value : 1000) || 1000;
-      let isUsingLabelBase = false;
-
-      if (window.labelModeActive && inputLabelWeight && inputLabelWeight.value.trim() !== '') {
-        const parsedLabel = parseFloat(inputLabelWeight.value);
-        if (!isNaN(parsedLabel) && parsedLabel > 0) {
-          currentBaseWeight = parsedLabel;
-          isUsingLabelBase = true;
-        }
-      }
-
-      window.targetWeight = currentBaseWeight;
-
-      if (targetWeightValueText) {
-        targetWeightValueText.innerText = `${window.targetWeight}g`;
-      }
-
-      if (containerMinusButtons) {
-        containerMinusButtons.innerHTML = '';
-        for (let i = window.buttonCountPerSide; i >= 1; i--) {
-          const offset = Math.round(i * window.step * 100) / 100;
-          const val = Math.round((window.targetWeight - offset) * 100) / 100;
-          const btn = document.createElement('button');
-          btn.className = isUsingLabelBase 
-            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
-            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
-          btn.onclick = function() { window.setSelectedWeight(val); };
-          containerMinusButtons.appendChild(btn);
-        }
-      }
-
-      if (containerPlusButtons) {
-        containerPlusButtons.innerHTML = '';
-        for (let i = 1; i <= window.buttonCountPerSide; i++) {
-          const offset = Math.round(i * window.step * 100) / 100;
-          const val = Math.round((window.targetWeight + offset) * 100) / 100;
-          const btn = document.createElement('button');
-          btn.className = isUsingLabelBase 
-            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
-            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
-          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
-          btn.onclick = function() { window.setSelectedWeight(val); };
-          containerPlusButtons.appendChild(btn);
-        }
-      }
-
-      if (btnExactTarget) {
-        if (isUsingLabelBase) {
-          btnExactTarget.className = "keypad-btn w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-amber-200 border border-amber-500 text-center";
-        } else {
-          btnExactTarget.className = "keypad-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-200 border border-indigo-500 text-center";
-        }
-      }
-
-      window.setSelectedWeight(window.targetWeight);
-    };
-
-    window.setSelectedWeight = function(val) {
+    function setSelectedWeight(val) {
       window.selectedWeight = val;
       const displayLabelHeader = document.getElementById('displayLabelHeader');
       const displaySelectedWeight = document.getElementById('displaySelectedWeight');
@@ -1388,9 +1848,82 @@
       }
 
       if (window.lucide) window.lucide.createIcons();
-    };
+    }
+    window.setSelectedWeight = setSelectedWeight;
 
-    window.addSample = function() {
+    function updateKeypad() {
+      const inputTargetWeight = document.getElementById('inputTargetWeight');
+      const inputStep = document.getElementById('inputStep');
+      const selectButtonCount = document.getElementById('selectButtonCount');
+      const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const targetWeightValueText = document.getElementById('targetWeightValueText');
+      const containerMinusButtons = document.getElementById('containerMinusButtons');
+      const containerPlusButtons = document.getElementById('containerPlusButtons');
+      const btnExactTarget = document.getElementById('btnExactTarget');
+
+      window.step = parseFloat(inputStep ? inputStep.value : 5) || 5;
+      window.buttonCountPerSide = parseInt(selectButtonCount ? selectButtonCount.value : 6) || 6;
+
+      let currentBaseWeight = parseFloat(inputTargetWeight ? inputTargetWeight.value : 1000) || 1000;
+      let isUsingLabelBase = false;
+
+      if (window.labelModeActive && inputLabelWeight && inputLabelWeight.value.trim() !== '') {
+        const parsedLabel = parseFloat(inputLabelWeight.value);
+        if (!isNaN(parsedLabel) && parsedLabel > 0) {
+          currentBaseWeight = parsedLabel;
+          isUsingLabelBase = true;
+        }
+      }
+
+      window.targetWeight = currentBaseWeight;
+
+      if (targetWeightValueText) {
+        targetWeightValueText.innerText = `${window.targetWeight}g`;
+      }
+
+      if (containerMinusButtons) {
+        containerMinusButtons.innerHTML = '';
+        for (let i = window.buttonCountPerSide; i >= 1; i--) {
+          const offset = Math.round(i * window.step * 100) / 100;
+          const val = Math.round((window.targetWeight - offset) * 100) / 100;
+          const btn = document.createElement('button');
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>-${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
+          btn.onclick = function() { setSelectedWeight(val); };
+          containerMinusButtons.appendChild(btn);
+        }
+      }
+
+      if (containerPlusButtons) {
+        containerPlusButtons.innerHTML = '';
+        for (let i = 1; i <= window.buttonCountPerSide; i++) {
+          const offset = Math.round(i * window.step * 100) / 100;
+          const val = Math.round((window.targetWeight + offset) * 100) / 100;
+          const btn = document.createElement('button');
+          btn.className = isUsingLabelBase 
+            ? 'keypad-btn bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold py-2 px-1 rounded-xl text-xs transition border border-amber-200 text-center flex flex-col items-center justify-center'
+            : 'keypad-btn bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold py-2 px-1 rounded-xl text-xs transition border border-slate-200 text-center flex flex-col items-center justify-center';
+          btn.innerHTML = `<span>+${offset}g</span><span class="text-[10px] ${isUsingLabelBase ? 'text-amber-700' : 'text-slate-400'} font-normal">(${val}g)</span>`;
+          btn.onclick = function() { setSelectedWeight(val); };
+          containerPlusButtons.appendChild(btn);
+        }
+      }
+
+      if (btnExactTarget) {
+        if (isUsingLabelBase) {
+          btnExactTarget.className = "keypad-btn w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-amber-200 border border-amber-500 text-center";
+        } else {
+          btnExactTarget.className = "keypad-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-200 border border-indigo-500 text-center";
+        }
+      }
+
+      setSelectedWeight(window.targetWeight);
+    }
+    window.updateKeypad = updateKeypad;
+
+    function addSample() {
       const inputSampleName = document.getElementById('inputSampleName');
       const checkAutoIncrement = document.getElementById('checkAutoIncrement');
       const inputLabelWeight = document.getElementById('inputLabelWeight');
@@ -1410,7 +1943,7 @@
       const expDateVal = inputSampleExpDate ? inputSampleExpDate.value : '';
 
       if (depozitVal && depozitVal !== 'Nespecificat') {
-        window.saveUserDeposit(depozitVal);
+        saveUserDeposit(depozitVal);
       }
 
       if (window.pendingBarcodeToMap) {
@@ -1425,8 +1958,8 @@
           name: cleanBaseName,
           targetWeight: window.targetWeight
         };
-        window.saveBarcodeCatalog();
-        window.showToast(`Codul ${window.pendingBarcodeToMap} a fost asociat cu "${cleanBaseName}"!`);
+        saveBarcodeCatalog();
+        showToast(`Codul ${window.pendingBarcodeToMap} a fost asociat cu "${cleanBaseName}"!`);
         window.pendingBarcodeToMap = null;
       }
 
@@ -1437,7 +1970,7 @@
         const scaleWeightVal = parseFloat(inputScaleWeight ? inputScaleWeight.value : NaN);
 
         if (isNaN(labelWeight)) {
-          window.showToast("Introdu gramajul de pe etichetă!", "error");
+          showToast("Introdu gramajul de pe etichetă!", "error");
           if (inputLabelWeight) inputLabelWeight.focus();
           return;
         }
@@ -1453,7 +1986,8 @@
           isLabelMode: true,
           depozit: depozitVal,
           lot: lotVal,
-          expDate: expDateVal
+          expDate: expDateVal,
+          alertMode: window.sampleAlertMode
         };
       } else {
         sample = {
@@ -1465,16 +1999,17 @@
           isLabelMode: false,
           depozit: depozitVal,
           lot: lotVal,
-          expDate: expDateVal
+          expDate: expDateVal,
+          alertMode: window.sampleAlertMode
         };
       }
 
       window.samplesList.push(sample);
-      window.saveToLocalStorage();
-      window.renderTable();
-      window.updateStatistics();
-      window.showToast(`Adăugat: ${name} (${sample.actualWeight}g)`);
-      window.playConfirmSound();
+      saveToLocalStorage();
+      renderTable();
+      updateStatistics();
+      showToast(`Adăugat: ${name} (${sample.actualWeight}g)`);
+      playConfirmSound();
 
       if (checkAutoIncrement && checkAutoIncrement.checked) {
         const match = name.match(/^(.*?)([\s\-_]*)(\d+)$/);
@@ -1498,422 +2033,12 @@
         }
       }
 
-      window.saveUIState();
-    };
+      saveUIState();
+    }
+    window.addSample = addSample;
 
-    window.getFilteredSamples = function() {
-      if (!window.activeDepozitFilter || window.activeDepozitFilter === 'Toate') {
-        return window.samplesList;
-      }
-      return window.samplesList.filter(s => (s.depozit || 'Nespecificat') === window.activeDepozitFilter);
-    };
-
-    window.getGroupedFormattedLines = function() {
-      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
-      const autoInc = checkAutoIncrement ? checkAutoIncrement.checked : true;
-      const groups = {};
-      const order = [];
-
-      const filteredList = window.getFilteredSamples();
-
-      filteredList.forEach(sample => {
-        let name = sample.name.trim();
-        let key = name;
-        
-        if (autoInc) {
-          const match = name.match(/^(.*?)([\s\-_]*\d+)$/);
-          if (match && match[1].trim().length > 0) {
-            key = match[1].trim();
-          }
-        }
-
-        let metaInfo = [];
-        if (sample.lot) metaInfo.push(`Lot: ${sample.lot}`);
-        if (sample.expDate) {
-          const parts = sample.expDate.split('-');
-          if (parts.length === 3) {
-            metaInfo.push(`${parts[2]}.${parts[1]}.${parts[0]}`);
-          } else {
-            metaInfo.push(sample.expDate);
-          }
-        }
-
-        let fullKey = key;
-        if (metaInfo.length > 0) {
-          fullKey = `${key} (${metaInfo.join(', ')})`;
-        }
-
-        if (!groups[fullKey]) {
-          groups[fullKey] = { labelWeights: [], scaleWeights: [], hasLabelMode: false };
-          order.push(fullKey);
-        }
-
-        if (sample.isLabelMode) {
-          groups[fullKey].hasLabelMode = true;
-          groups[fullKey].labelWeights.push(`${sample.targetWeight}g`);
-          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
-        } else {
-          groups[fullKey].scaleWeights.push(`${sample.actualWeight}g`);
-        }
-      });
-
-      const lines = [];
-      order.forEach(fullKey => {
-        const g = groups[fullKey];
-        if (g.hasLabelMode && g.labelWeights.length > 0) {
-          lines.push(`${fullKey}, ${g.labelWeights.join(', ')}`);
-          lines.push(`${g.scaleWeights.join(', ')}`);
-        } else {
-          lines.push(`${fullKey}, ${g.scaleWeights.join(', ')}`);
-        }
-      });
-
-      return lines;
-    };
-
-    window.renderTable = function() {
-      const tableBody = document.getElementById('tableBody');
-      const emptyState = document.getElementById('emptyState');
-      const printSimpleList = document.getElementById('printSimpleList');
-      const printSubtitleDepozit = document.getElementById('printSubtitleDepozit');
-      const previewGroupedText = document.getElementById('previewGroupedText');
-      const savedCountText = document.getElementById('savedCountText');
-      if (!tableBody) return;
-
-      if (printSubtitleDepozit) {
-        if (window.activeDepozitFilter && window.activeDepozitFilter !== 'Toate') {
-          printSubtitleDepozit.innerText = window.activeDepozitFilter;
-        } else {
-          printSubtitleDepozit.innerText = '';
-        }
-      }
-
-      window.updateDepozitFiltersAndSuggestions();
-
-      tableBody.innerHTML = '';
-      if (printSimpleList) printSimpleList.innerHTML = '';
-
-      const filteredList = window.getFilteredSamples();
-      const groupedLines = window.getGroupedFormattedLines();
-
-      if (previewGroupedText) {
-        previewGroupedText.innerText = groupedLines.length > 0 ? groupedLines.join('\n') : '(Nicio probă adăugată în această vizualizare)';
-      }
-
-      if (filteredList.length === 0) {
-        if (emptyState) emptyState.classList.remove('hidden');
-      } else {
-        if (emptyState) emptyState.classList.add('hidden');
-        
-        filteredList.forEach((sample, index) => {
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition border-b border-slate-100 animate-pop";
-          
-          const diffBadge = sample.diff === 0 
-            ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">0g</span>`
-            : sample.diff > 0 
-              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">+${sample.diff}g</span>`
-              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">${sample.diff}g</span>`;
-
-          const depBadge = (sample.depozit && sample.depozit !== 'Nespecificat')
-            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 text-slate-700 border border-slate-300">${sample.depozit}</span>`
-            : '';
-
-          const lotBadge = sample.lot
-            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Lot: ${sample.lot}</span>`
-            : '';
-
-          let formattedExpDate = '';
-          if (sample.expDate) {
-            const parts = sample.expDate.split('-');
-            formattedExpDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : sample.expDate;
-          }
-
-          const expBadge = formattedExpDate
-            ? `<span class="inline-block ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200">${formattedExpDate}</span>`
-            : '';
-
-          const nameCell = sample.isLabelMode
-            ? `${sample.name} <span class="inline-flex items-center gap-0.5 ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 align-middle"><i data-lucide="tag" class="w-2.5 h-2.5"></i>etichetă</span>${depBadge}${lotBadge}${expBadge}`
-            : `${sample.name}${depBadge}${lotBadge}${expBadge}`;
-
-          const targetCell = sample.isLabelMode
-            ? `<span title="Gramaj etichetă">${sample.targetWeight}g</span>`
-            : `${sample.targetWeight}g`;
-
-          tr.innerHTML = `
-            <td class="py-2.5 px-3 text-center text-slate-400 font-bold">${index + 1}</td>
-            <td class="py-2.5 px-3 font-bold text-slate-800">${nameCell}</td>
-            <td class="py-2.5 px-3 text-right font-semibold text-slate-500">${targetCell}</td>
-            <td class="py-2.5 px-3 text-right font-black text-indigo-900 text-sm">${sample.actualWeight}g</td>
-            <td class="py-2.5 px-3 text-center">${diffBadge}</td>
-            <td class="py-2.5 px-3 text-center no-print">
-              <button onclick="window.deleteSample(${sample.id})" class="text-slate-300 hover:text-red-600 transition p-1">
-                <i data-lucide="trash" class="w-4 h-4"></i>
-              </button>
-            </td>
-          `;
-          tableBody.appendChild(tr);
-        });
-
-        if (printSimpleList) {
-          groupedLines.forEach(line => {
-            const printDiv = document.createElement('div');
-            printDiv.className = "print-item py-2 border-b border-slate-300 font-semibold text-slate-900 text-lg";
-            printDiv.innerText = line;
-            printSimpleList.appendChild(printDiv);
-          });
-        }
-      }
-
-      if (savedCountText) savedCountText.innerText = `${window.samplesList.length} probe salvate local`;
-      if (window.lucide) window.lucide.createIcons();
-    };
-
-    window.deleteSample = function(id) {
-      window.samplesList = window.samplesList.filter(s => s.id !== id);
-      window.saveToLocalStorage();
-      window.renderTable();
-      window.updateStatistics();
-      window.showToast("Proba a fost ștearsă", "info");
-    };
-
-    window.updateStatistics = function() {
-      const statTotalCount = document.getElementById('statTotalCount');
-      const statAverageWeight = document.getElementById('statAverageWeight');
-      const statAverageDiff = document.getElementById('statAverageDiff');
-
-      const filteredList = window.getFilteredSamples();
-      const total = filteredList.length;
-      if (statTotalCount) statTotalCount.innerText = total;
-
-      if (total === 0) {
-        if (statAverageWeight) statAverageWeight.innerText = "0g";
-        if (statAverageDiff) statAverageDiff.innerText = "0g";
-        return;
-      }
-
-      const sumWeight = filteredList.reduce((acc, curr) => acc + curr.actualWeight, 0);
-      const avgWeight = (sumWeight / total).toFixed(1);
-      if (statAverageWeight) statAverageWeight.innerText = `${avgWeight}g`;
-
-      const sumDiff = filteredList.reduce((acc, curr) => acc + curr.diff, 0);
-      const avgDiff = (sumDiff / total).toFixed(1);
-      if (statAverageDiff) statAverageDiff.innerText = `${avgDiff > 0 ? '+' : ''}${avgDiff}g`;
-    };
-
-    window.saveToLocalStorage = function() {
-      localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
-    };
-
-    window.saveUIState = function() {
-      const inputSampleName = document.getElementById('inputSampleName');
-      const checkAutoIncrement = document.getElementById('checkAutoIncrement');
-      const inputSampleLot = document.getElementById('inputSampleLot');
-      const inputSampleExpDate = document.getElementById('inputSampleExpDate');
-
-      const state = {
-        sampleName: inputSampleName ? inputSampleName.value : '',
-        autoIncrement: checkAutoIncrement ? checkAutoIncrement.checked : true,
-        soundMode: window.soundMode,
-        lot: inputSampleLot ? inputSampleLot.value : '',
-        expDate: inputSampleExpDate ? inputSampleExpDate.value : ''
-      };
-      localStorage.setItem('lab_ui_state', JSON.stringify(state));
-    };
-
-    window.loadUIState = function() {
-      const data = localStorage.getItem('lab_ui_state');
-      if (data) {
-        try {
-          const state = JSON.parse(data);
-          const inputSampleName = document.getElementById('inputSampleName');
-          const checkAutoIncrement = document.getElementById('checkAutoIncrement');
-          const inputSampleLot = document.getElementById('inputSampleLot');
-          const inputSampleExpDate = document.getElementById('inputSampleExpDate');
-
-          if (inputSampleName && typeof state.sampleName === 'string') {
-            inputSampleName.value = state.sampleName;
-          }
-          if (checkAutoIncrement && typeof state.autoIncrement === 'boolean') {
-            checkAutoIncrement.checked = state.autoIncrement;
-          }
-          if (inputSampleLot && typeof state.lot === 'string') {
-            inputSampleLot.value = state.lot;
-          }
-          if (inputSampleExpDate && typeof state.expDate === 'string') {
-            inputSampleExpDate.value = state.expDate;
-          }
-          if (typeof state.soundMode === 'string') {
-            window.soundMode = state.soundMode;
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      window.updateSoundButton();
-    };
-
-    window.updateSoundButton = function() {
-      const btn = document.getElementById('btnToggleSound');
-      if (!btn) return;
-
-      const svgVolumeFull = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
-      const svgVibrate = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/></svg>`;
-      const svgSilent = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>`;
-
-      if (window.soundMode === 'full') {
-        btn.innerHTML = svgVolumeFull;
-        btn.className = "bg-indigo-800 hover:bg-indigo-700 text-indigo-200 p-2 rounded-lg transition border border-indigo-700";
-        btn.title = "Sunet + vibrație la salvare (click: doar vibrație)";
-      } else if (window.soundMode === 'vibrate') {
-        btn.innerHTML = svgVibrate;
-        btn.className = "bg-amber-700 hover:bg-amber-600 text-amber-100 p-2 rounded-lg transition border border-amber-600";
-        btn.title = "Doar vibrație la salvare (click: silențios)";
-      } else {
-        btn.innerHTML = svgSilent;
-        btn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-lg transition border border-slate-600";
-        btn.title = "Silențios (click: sunet + vibrație)";
-      }
-    };
-
-    window.toggleSound = function() {
-      if (window.soundMode === 'full') {
-        window.soundMode = 'vibrate';
-      } else if (window.soundMode === 'vibrate') {
-        window.soundMode = 'silent';
-      } else {
-        window.soundMode = 'full';
-      }
-      window.updateSoundButton();
-      window.saveUIState();
-      window.playConfirmSound();
-    };
-
-    window.playConfirmSound = function() {
-      if (window.soundMode === 'silent') return;
-
-      if (window.soundMode === 'full') {
-        try {
-          if (!window.audioCtx) {
-            window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          }
-          if (window.audioCtx.state === 'suspended') {
-            window.audioCtx.resume();
-          }
-
-          const now = window.audioCtx.currentTime;
-          const notes = [
-            { freq: 880, start: 0, dur: 0.09 },
-            { freq: 1200, start: 0.1, dur: 0.12 }
-          ];
-
-          notes.forEach(note => {
-            const osc = window.audioCtx.createOscillator();
-            const gain = window.audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(note.freq, now + note.start);
-            gain.gain.setValueAtTime(0, now + note.start);
-            gain.gain.linearRampToValueAtTime(0.25, now + note.start + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + note.start + note.dur);
-            osc.connect(gain);
-            gain.connect(window.audioCtx.destination);
-            osc.start(now + note.start);
-            osc.stop(now + note.start + note.dur + 0.02);
-          });
-        } catch (e) {
-          console.error('Eroare audio:', e);
-        }
-      }
-
-      if (navigator.vibrate) {
-        navigator.vibrate(60);
-      }
-    };
-
-    window.loadFromLocalStorage = function() {
-      const data = localStorage.getItem('lab_samples_data');
-      if (data) {
-        try {
-          window.samplesList = JSON.parse(data);
-          window.samplesList.forEach(s => {
-            const match = s.name.match(/PROBA-(\d+)/);
-            if (match) {
-              const num = parseInt(match[1]);
-              if (num >= window.sampleCounter) window.sampleCounter = num + 1;
-            }
-          });
-          window.renderTable();
-          window.updateStatistics();
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    };
-
-    window.exportCSV = function() {
-      const filtered = window.getFilteredSamples();
-      if (filtered.length === 0) {
-        window.showToast("Nu există probe în vizualizarea curentă!", "error");
-        return;
-      }
-
-      const lines = window.getGroupedFormattedLines();
-      const csvContent = "\uFEFF" + lines.join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      const filterSuffix = window.activeDepozitFilter !== 'Toate' ? `_${window.activeDepozitFilter.replace(/\s+/g, '_')}` : '';
-      link.setAttribute('download', `Comanda_Probe${filterSuffix}_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      window.showToast("Fișier CSV descărcat cu succes!");
-    };
-
-    window.exportClipboard = function() {
-      const filtered = window.getFilteredSamples();
-      if (filtered.length === 0) {
-        window.showToast("Nu există probe de copiat!", "error");
-        return;
-      }
-
-      const lines = window.getGroupedFormattedLines();
-      const textContent = lines.join('\n');
-      
-      const textarea = document.createElement('textarea');
-      textarea.value = textContent;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      
-      try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-          window.showToast("Datele au fost copiate! Apasă Ctrl+V.");
-        } else {
-          window.showToast("Nu s-a putut copia textul", "error");
-        }
-      } catch (err) {
-        window.showToast("Eroare la copiere!", "error");
-      }
-      
-      document.body.removeChild(textarea);
-    };
-
-    window.closeConfirmModal = function() {
-      const confirmModal = document.getElementById('confirmModal');
-      if (confirmModal) {
-        confirmModal.classList.add('opacity-0');
-        setTimeout(() => confirmModal.classList.add('hidden'), 200);
-      }
-    };
-
-    window.addEventListener('DOMContentLoaded', () => {
+    /* Dom Content Loaded Initialization */
+    document.addEventListener('DOMContentLoaded', () => {
       const inputTargetWeight = document.getElementById('inputTargetWeight');
       const inputStep = document.getElementById('inputStep');
       const selectButtonCount = document.getElementById('selectButtonCount');
@@ -1923,18 +2048,18 @@
       const btnConfirmModal = document.getElementById('btnConfirmModal');
 
       if (btnExactTarget) {
-        btnExactTarget.addEventListener('click', () => window.setSelectedWeight(window.targetWeight));
+        btnExactTarget.addEventListener('click', () => setSelectedWeight(window.targetWeight));
       }
-      if (inputTargetWeight) inputTargetWeight.addEventListener('input', window.updateKeypad);
-      if (inputStep) inputStep.addEventListener('input', window.updateKeypad);
+      if (inputTargetWeight) inputTargetWeight.addEventListener('input', updateKeypad);
+      if (inputStep) inputStep.addEventListener('input', updateKeypad);
       const inputLabelWeight = document.getElementById('inputLabelWeight');
-      if (inputLabelWeight) inputLabelWeight.addEventListener('input', window.updateKeypad);
-      if (selectButtonCount) selectButtonCount.addEventListener('change', window.updateKeypad);
+      if (inputLabelWeight) inputLabelWeight.addEventListener('input', updateKeypad);
+      if (selectButtonCount) selectButtonCount.addEventListener('change', updateKeypad);
 
       if (btnResetAll) {
         btnResetAll.addEventListener('click', () => {
           if (window.samplesList.length === 0) {
-            window.showToast("Tabelul este deja gol.", "info");
+            showToast("Tabelul este deja gol.", "info");
             return;
           }
           if (confirmModal) {
@@ -1948,18 +2073,18 @@
         btnConfirmModal.addEventListener('click', () => {
           window.samplesList = [];
           window.sampleCounter = 1;
-          window.saveToLocalStorage();
-          window.renderTable();
-          window.updateStatistics();
-          window.closeConfirmModal();
-          window.showToast("Probele au fost șterse. Catalogul de coduri rămâne salvat.", "info");
+          saveToLocalStorage();
+          renderTable();
+          updateStatistics();
+          closeConfirmModal();
+          showToast("Probele au fost șterse. Catalogul de coduri rămâne salvat.", "info");
         });
       }
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && document.activeElement !== btnResetAll) {
           e.preventDefault();
-          window.addSample();
+          addSample();
         }
       });
 
@@ -1968,16 +2093,16 @@
       const inputSampleLot = document.getElementById('inputSampleLot');
       const inputSampleExpDate = document.getElementById('inputSampleExpDate');
 
-      if (inputSampleName) inputSampleName.addEventListener('input', window.saveUIState);
-      if (checkAutoIncrement) checkAutoIncrement.addEventListener('change', window.saveUIState);
-      if (inputSampleLot) inputSampleLot.addEventListener('input', window.saveUIState);
-      if (inputSampleExpDate) inputSampleExpDate.addEventListener('change', window.saveUIState);
+      if (inputSampleName) inputSampleName.addEventListener('input', saveUIState);
+      if (checkAutoIncrement) checkAutoIncrement.addEventListener('change', saveUIState);
+      if (inputSampleLot) inputSampleLot.addEventListener('input', saveUIState);
+      if (inputSampleExpDate) inputSampleExpDate.addEventListener('change', saveUIState);
 
-      window.updateKeypad();
-      window.loadBarcodeCatalog();
-      window.loadUserDeposits();
-      window.loadFromLocalStorage();
-      window.loadUIState();
+      updateKeypad();
+      loadBarcodeCatalog();
+      loadUserDeposits();
+      loadFromLocalStorage();
+      loadUIState();
     });
   </script>
 
@@ -1985,6 +2110,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'asistent-cantarire-probe';
     const firebaseConfig = typeof __firebase_config !== 'undefined'
@@ -2001,6 +2127,72 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    let messaging = null;
+
+    try {
+      messaging = getMessaging(app);
+    } catch(e) {
+      console.warn("Firebase Messaging nu este suportat direct în acest browser:", e);
+    }
+
+    const vapidKey = "BGzOYVgO3iokM6-0xvf_BRJKBnCANXLh4PqLg-spXysmpkWK28nRZHNKoGFsSu8CpiImFS3aLpwV5GtQC8EceBA";
+
+    window.requestNotificationPermission = async function() {
+      if (!('Notification' in window)) {
+        window.showToast("Browserul tău nu suportă notificări Push.", "error");
+        return;
+      }
+
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+            if (messaging) {
+              const currentToken = await getToken(messaging, { vapidKey: vapidKey, serviceWorkerRegistration: registration });
+              if (currentToken) {
+                if (currentUser && !currentUser.isAnonymous) {
+                  const tokenDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'pushToken');
+                  await setDoc(tokenDocRef, { token: currentToken, updatedAt: new Date().toISOString() });
+                }
+                window.showToast("Notificările Push au fost activate cu succes!");
+                updateNotificationButtonState(true);
+              }
+            } else {
+              window.showToast("Notificări activate la nivel de browser!");
+              updateNotificationButtonState(true);
+            }
+          }
+        } else if (permission === 'denied') {
+          window.showToast("Permisiunea de notificări a fost blocată din browser.", "error");
+        }
+      } catch (err) {
+        console.error("Eroare la activarea notificărilor:", err);
+        window.showToast("Eroare la activarea notificărilor Push.", "error");
+      }
+    };
+
+    function updateNotificationButtonState(enabled) {
+      const btn = document.getElementById('btnEnableNotifications');
+      const btnText = document.getElementById('btnNotificationText');
+      if (!btn || !btnText) return;
+      if (enabled || (Notification.permission === 'granted')) {
+        btn.className = "bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow";
+        btnText.innerText = "Notificări Active";
+      }
+    }
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      updateNotificationButtonState(true);
+    }
+
+    if (messaging) {
+      onMessage(messaging, (payload) => {
+        const title = payload.notification?.title || 'Alertă Expirare';
+        const body = payload.notification?.body || 'Atenție la probele ce expiră azi!';
+        window.showToast(`${title}: ${body}`, "info");
+      });
+    }
 
     let unsubscribeFirestore = null;
     let unsubscribeUserDeposits = null;
