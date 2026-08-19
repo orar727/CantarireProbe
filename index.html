@@ -133,7 +133,7 @@
     <!-- COLOANA STANGA: Panou Configurare & Tastatura Rapida -->
     <section class="lg:col-span-6 flex flex-col gap-5 no-print">
 
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+      <div id="topPresetsPanel" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
         <div class="flex justify-between items-center mb-3">
           <label class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
             <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i> Setări Rapid Cântărire
@@ -259,8 +259,24 @@
                 <button type="button" onclick="window.setLabelWeightPreset(1000)" class="px-2 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded font-bold transition">1000g</button>
               </div>
 
+              <!-- Câmp dedicat pentru Gramaj Citit pe Cântar -->
+              <div class="mt-3">
+                <label for="inputScaleWeight" class="block text-[11px] font-extrabold text-amber-900 uppercase tracking-wide flex items-center gap-1 mb-1">
+                  <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-600"></i> Gramaj Citit pe Cântar (g)
+                </label>
+                <div class="relative">
+                  <input type="number" id="inputScaleWeight" step="any" placeholder="Ex: 750" class="w-full pl-3 pr-12 py-2.5 bg-white border border-amber-300 rounded-lg text-amber-950 font-black text-base focus:ring-2 focus:ring-amber-500 outline-none transition shadow-sm">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-500 pointer-events-none">g</span>
+                </div>
+              </div>
+
+              <button type="button" onclick="window.addSample()" class="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 active:scale-[0.99]">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span>ADAUGĂ PROBA În TABEL (Enter)</span>
+              </button>
+
               <p class="text-[10px] text-amber-800 font-medium mt-2 leading-relaxed">
-                💡 Tastatura de mai jos s-a adaptat pe gramajul etichetei! Selectează greutatea citită pe cântar.
+                💡 Introdu gramajul de pe etichetă și greutatea citită pe cântar, apoi apasă Adaugă Proba.
               </p>
             </div>
           </div>
@@ -277,7 +293,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-11 gap-2 items-stretch mb-5">
+        <div id="keypadGridWrap" class="grid grid-cols-11 gap-2 items-stretch mb-5">
           <div id="containerMinusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2"></div>
           <div class="col-span-1 flex items-center justify-center">
             <button id="btnExactTarget" class="keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight">
@@ -1165,19 +1181,33 @@
       const btnToggleLabelMode = document.getElementById('btnToggleLabelMode');
       const labelModeBtnText = document.getElementById('labelModeBtnText');
       const displayCardWrap = document.getElementById('displayCardWrap');
+      const topPresetsPanel = document.getElementById('topPresetsPanel');
+      const keypadGridWrap = document.getElementById('keypadGridWrap');
+      const btnAddSample = document.getElementById('btnAddSample');
       const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const inputScaleWeight = document.getElementById('inputScaleWeight');
 
       if (window.labelModeActive) {
         if (labelModeFieldWrap) labelModeFieldWrap.classList.remove('hidden');
+        if (topPresetsPanel) topPresetsPanel.classList.add('hidden');
+        if (keypadGridWrap) keypadGridWrap.classList.add('hidden');
+        if (displayCardWrap) displayCardWrap.classList.add('hidden');
+        if (btnAddSample) btnAddSample.classList.add('hidden');
+
         if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition bg-amber-500 text-white border border-amber-600 shadow-md";
         if (labelModeBtnText) labelModeBtnText.innerText = "Mod Etichetă Individuală ACTIV (Apasă pentru dezactivare)";
-        if (displayCardWrap) displayCardWrap.className = "bg-gradient-to-br from-amber-950 via-slate-900 to-amber-900 rounded-2xl p-5 text-center text-white mb-5 shadow-lg relative overflow-hidden transition-all border border-amber-500/40";
+        if (inputLabelWeight) inputLabelWeight.focus();
       } else {
         if (labelModeFieldWrap) labelModeFieldWrap.classList.add('hidden');
+        if (topPresetsPanel) topPresetsPanel.classList.remove('hidden');
+        if (keypadGridWrap) keypadGridWrap.classList.remove('hidden');
+        if (displayCardWrap) displayCardWrap.classList.remove('hidden');
+        if (btnAddSample) btnAddSample.classList.remove('hidden');
+
         if (btnToggleLabelMode) btnToggleLabelMode.className = "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold border transition bg-slate-50 text-slate-600 border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300";
         if (labelModeBtnText) labelModeBtnText.innerText = "Activează Mod Etichetă Individuală";
-        if (displayCardWrap) displayCardWrap.className = "bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-center text-white mb-5 shadow-md relative overflow-hidden transition-all";
         if (inputLabelWeight) inputLabelWeight.value = '';
+        if (inputScaleWeight) inputScaleWeight.value = '';
       }
 
       window.updateKeypad();
@@ -1186,9 +1216,10 @@
 
     window.setLabelWeightPreset = function(val) {
       const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const inputScaleWeight = document.getElementById('inputScaleWeight');
       if (!inputLabelWeight) return;
       inputLabelWeight.value = val;
-      if (typeof inputLabelWeight.blur === 'function') inputLabelWeight.blur();
+      if (inputScaleWeight) inputScaleWeight.focus();
       window.updateKeypad();
     };
 
@@ -1342,6 +1373,7 @@
       const inputSampleName = document.getElementById('inputSampleName');
       const checkAutoIncrement = document.getElementById('checkAutoIncrement');
       const inputLabelWeight = document.getElementById('inputLabelWeight');
+      const inputScaleWeight = document.getElementById('inputScaleWeight');
       const checkKeepLabelWeight = document.getElementById('checkKeepLabelWeight');
       const inputSampleDepozit = document.getElementById('inputSampleDepozit');
 
@@ -1377,17 +1409,22 @@
 
       if (window.labelModeActive) {
         const labelWeight = parseFloat(inputLabelWeight ? inputLabelWeight.value : NaN);
+        const scaleWeightVal = parseFloat(inputScaleWeight ? inputScaleWeight.value : NaN);
+
         if (isNaN(labelWeight)) {
           window.showToast("Introdu gramajul de pe etichetă!", "error");
           if (inputLabelWeight) inputLabelWeight.focus();
           return;
         }
+
+        const actualWeightToSave = !isNaN(scaleWeightVal) ? scaleWeightVal : window.selectedWeight;
+
         sample = {
           id: Date.now(),
           name: name,
           targetWeight: labelWeight,
-          actualWeight: window.selectedWeight,
-          diff: window.selectedWeight - labelWeight,
+          actualWeight: actualWeightToSave,
+          diff: actualWeightToSave - labelWeight,
           isLabelMode: true,
           depozit: depozitVal
         };
@@ -1407,7 +1444,7 @@
       window.saveToLocalStorage();
       window.renderTable();
       window.updateStatistics();
-      window.showToast(`Adăugat: ${name} (${window.selectedWeight}g)`);
+      window.showToast(`Adăugat: ${name} (${sample.actualWeight}g)`);
       window.playConfirmSound();
 
       if (checkAutoIncrement && checkAutoIncrement.checked) {
@@ -1423,15 +1460,16 @@
         }
       }
 
-      if (window.labelModeActive && inputLabelWeight) {
+      if (window.labelModeActive) {
+        if (inputScaleWeight) inputScaleWeight.value = '';
         if (!checkKeepLabelWeight || !checkKeepLabelWeight.checked) {
-          inputLabelWeight.value = '';
+          if (inputLabelWeight) {
+            inputLabelWeight.value = '';
+            inputLabelWeight.focus();
+          }
+        } else {
+          if (inputScaleWeight) inputScaleWeight.focus();
         }
-        if (typeof inputLabelWeight.blur === 'function') inputLabelWeight.blur();
-      }
-
-      if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
       }
 
       window.saveUIState();
@@ -1464,18 +1502,31 @@
         }
 
         if (!groups[key]) {
-          groups[key] = [];
+          groups[key] = { labelWeights: [], scaleWeights: [], hasLabelMode: false };
           order.push(key);
         }
 
         if (sample.isLabelMode) {
-          groups[key].push(`${sample.targetWeight}g-${sample.actualWeight}g`);
+          groups[key].hasLabelMode = true;
+          groups[key].labelWeights.push(`${sample.targetWeight}g`);
+          groups[key].scaleWeights.push(`${sample.actualWeight}g`);
         } else {
-          groups[key].push(`${sample.actualWeight}g`);
+          groups[key].scaleWeights.push(`${sample.actualWeight}g`);
         }
       });
 
-      return order.map(key => `${key}, ${groups[key].join(', ')}`);
+      const lines = [];
+      order.forEach(key => {
+        const g = groups[key];
+        if (g.hasLabelMode && g.labelWeights.length > 0) {
+          lines.push(`${key}, ${g.labelWeights.join(', ')}`);
+          lines.push(`${g.scaleWeights.join(', ')}`);
+        } else {
+          lines.push(`${key}, ${g.scaleWeights.join(', ')}`);
+        }
+      });
+
+      return lines;
     };
 
     window.renderTable = function() {
