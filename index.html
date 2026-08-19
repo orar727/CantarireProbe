@@ -293,15 +293,20 @@
           </div>
         </div>
 
-        <div id="keypadGridWrap" class="grid grid-cols-11 gap-2 items-stretch mb-5">
-          <div id="containerMinusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2"></div>
-          <div class="col-span-1 flex items-center justify-center">
-            <button id="btnExactTarget" class="keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight">
-              <span id="targetWeightValueText">1000g</span>
-              <span class="text-[10px] opacity-80 font-normal mt-0.5">(FIX)</span>
+        <div id="keypadGridWrap" class="flex flex-col gap-2 mb-5">
+          <!-- Butoane Scădere (Minus) Sus -->
+          <div id="containerMinusButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+          
+          <!-- Buton Greutate Țintă (FIX) Orizontal la Mijloc -->
+          <div class="w-full my-0.5">
+            <button id="btnExactTarget" class="keypad-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-200 border border-indigo-500 text-center">
+              <span id="targetWeightValueText" class="text-base font-black">1000g</span>
+              <span class="text-xs opacity-80 font-normal">(FIX)</span>
             </button>
           </div>
-          <div id="containerPlusButtons" class="col-span-5 grid grid-cols-2 sm:grid-cols-2 gap-2"></div>
+
+          <!-- Butoane Adăugare (Plus) Jos -->
+          <div id="containerPlusButtons" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
         </div>
 
         <button id="btnAddSample" onclick="window.addSample()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 active:scale-[0.99]">
@@ -1308,9 +1313,9 @@
 
       if (btnExactTarget) {
         if (isUsingLabelBase) {
-          btnExactTarget.className = "keypad-btn w-full h-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-amber-200 border border-amber-500 text-center leading-tight";
+          btnExactTarget.className = "keypad-btn w-full bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-amber-200 border border-amber-500 text-center";
         } else {
-          btnExactTarget.className = "keypad-btn w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs sm:text-sm p-1 flex flex-col items-center justify-center shadow-md shadow-indigo-200 border border-indigo-500 text-center leading-tight";
+          btnExactTarget.className = "keypad-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-sm py-2.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-200 border border-indigo-500 text-center";
         }
       }
 
