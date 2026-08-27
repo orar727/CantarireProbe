@@ -1392,6 +1392,7 @@
       const inputSampleName = document.getElementById('inputSampleName');
       const inputLabelWeight = document.getElementById('inputLabelWeight');
 
+      // Detectare cod de cântar cu greutate variabilă (prefix 20-24, 28, 29)
       if (/^(20|21|22|23|24|28|29)\d{11}$/.test(cleanText)) {
         scaleItemPrefix = cleanText.substring(0, 7);
         const weightPart = parseInt(cleanText.substring(7, 12), 10);
@@ -1400,6 +1401,7 @@
         }
       }
 
+      // Căutare automată a produsului
       const matched = findInBarcodeCatalog(cleanText) || (scaleItemPrefix ? findInBarcodeCatalog(scaleItemPrefix) : null);
 
       if (matched) {
@@ -1423,6 +1425,7 @@
         return;
       }
 
+      // Dacă este cod de cântar dar produsul nu e în catalog
       if (extractedWeight) {
         if (!window.labelModeActive) {
           toggleLabelMode();
@@ -1431,22 +1434,22 @@
           inputLabelWeight.value = extractedWeight;
           updateKeypad();
         }
-        showToast(`EAN Cântar detectat! Gramaj etichetă: ${extractedWeight}g`);
+        if (inputSampleName && (!inputSampleName.value || inputSampleName.value.startsWith('PROBA-'))) {
+          inputSampleName.value = scaleItemPrefix || cleanText;
+        }
+        showToast(`EAN Cântar detectat! Gramaj: ${extractedWeight}g`);
         closeBarcodeScanner();
         return;
       }
 
-      if (Object.keys(window.barcodeCatalog).length > 0) {
-        closeBarcodeScanner();
-        openMapEanModal(cleanText);
-        return;
-      } else {
-        window.pendingBarcodeToMap = cleanText;
-        if (inputSampleName) inputSampleName.value = cleanText;
-        saveUIState();
-        showToast(`Cod nou: ${cleanText}! Tastează numele și se va salva automat.`, "info");
+      // Dacă este cod complet nou: îl preia direct în câmpul de nume fără ferestre inutile
+      window.pendingBarcodeToMap = cleanText;
+      if (inputSampleName) {
+        inputSampleName.value = cleanText;
+        inputSampleName.focus();
       }
-
+      saveUIState();
+      showToast(`Cod nou: ${cleanText}! Tastează numele și se va salva automat.`, "info");
       closeBarcodeScanner();
     }
     window.onScanSuccess = onScanSuccess;
