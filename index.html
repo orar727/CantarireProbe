@@ -408,7 +408,6 @@
 
     </section>
 
-    <!-- COLOANA DREAPTA: Tabel & Statistici -->
     <section class="lg:col-span-6 flex flex-col gap-5">
 
       <div class="grid grid-cols-3 gap-3 no-print">
@@ -673,7 +672,7 @@
     <div id="toastIcon" class="p-1 rounded-full bg-emerald-500/20 text-emerald-400">
       <i data-lucide="check" class="w-4 h-4"></i>
     </div>
-    <span id="toastMessage" class="text-xs font-semibold">Acțiune formată cu succes!</span>
+    <span id="toastMessage" class="text-xs font-semibold">Acțiune efectuată cu succes!</span>
   </div>
 
   <!-- MODAL: Ștergere Generală -->
@@ -858,8 +857,7 @@
         const expDateInput = document.getElementById('inputSampleExpDate');
         if (expDateInput && !expDateInput.value) {
           // Preset to today if empty to help the user
-          const today = new Date().toISOString().split('T')[0];
-          expDateInput.value = today;
+          setExpDateToday();
         }
       } else {
         if (btnAcum) btnAcum.className = "px-3 py-1 rounded-md text-xs font-extrabold transition bg-indigo-600 text-white shadow";
@@ -919,7 +917,7 @@
 
       if (banner) banner.classList.add('hidden');
       if (btnAddText) btnAddText.innerText = "ADAUGĂ PROBA ÎN TABEL (Enter)";
-      if (btnAddLabelText) btnAddLabelText.innerText = "ADAUGĂ PROBA În TABEL (Enter)";
+      if (btnAddLabelText) btnAddLabelText.innerText = "ADAUGĂ PROBA ÎN TABEL (Enter)";
       window.showToast("Modul de inserare a fost anulat.", "info");
     }
     window.cancelInsertMode = cancelInsertMode;
@@ -1002,24 +1000,6 @@
     window.renderAvansModal = renderAvansModal;
 
     function checkAndTriggerExpNotifications(isManualTrigger = false) {
-      if (!('Notification' in window)) {
-        if (isManualTrigger) window.showToast("Browserul nu suportă notificări push.", "error");
-        return;
-      }
-
-      if (Notification.permission !== 'granted') {
-        if (isManualTrigger) {
-          Notification.requestPermission().then(perm => {
-            if (perm === 'granted') {
-              window.checkAndTriggerExpNotifications(true);
-            } else {
-              window.showToast("Permisiunea de notificări nu a fost acordată.", "error");
-            }
-          });
-        }
-        return;
-      }
-
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
@@ -1067,22 +1047,6 @@
 
     /* Funcție dedicată pentru test forțat al tuturor probelor EXP */
     function forceTestAllExpNotification() {
-      if (!('Notification' in window)) {
-        window.showToast("Browserul nu suportă notificări.", "error");
-        return;
-      }
-
-      if (Notification.permission !== 'granted') {
-        Notification.requestPermission().then(perm => {
-          if (perm === 'granted') {
-            window.forceTestAllExpNotification();
-          } else {
-            window.showToast("Activează notificările mai întâi!", "error");
-          }
-        });
-        return;
-      }
-
       const expSamples = window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
 
       if (expSamples.length === 0) {
@@ -1101,24 +1065,40 @@
     }
     window.forceTestAllExpNotification = forceTestAllExpNotification;
 
-    function sendPushNotificationBanner(title, bodyText) {
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'TEST_NOTIFICATION',
-          title: title,
-          options: {
-            body: bodyText,
-            icon: 'icon.png',
-            badge: 'icon.png'
+    async function sendPushNotificationBanner(title, bodyText) {
+      const options = {
+        body: bodyText,
+        icon: 'icon.png',
+        badge: 'icon.png',
+        vibrate: [200, 100, 200],
+        tag: 'exp-alert-' + Date.now()
+      };
+
+      // 1. Încercare afișare prin Service Worker (Standardul oficial PWA / Android / iOS)
+      if ('serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && typeof reg.showNotification === 'function') {
+            await reg.showNotification(title, options);
+            window.showToast(`${title}: ${bodyText}`, "info");
+            return;
           }
-        });
-      } else {
-        new Notification(title, {
-          body: bodyText,
-          icon: 'icon.png',
-          badge: 'icon.png'
-        });
+        } catch (swErr) {
+          console.warn("Eroare showNotification prin SW:", swErr);
+        }
       }
+
+      // 2. Fallback direct prin browser Notification API (pentru PC / Chrome desktop)
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(title, options);
+        } catch (notifErr) {
+          console.warn("Eroare instanțiere Notification:", notifErr);
+        }
+      }
+
+      // 3. Banner vizual în aplicație
+      window.showToast(`${title}: ${bodyText}`, "info");
     }
     window.sendPushNotificationBanner = sendPushNotificationBanner;
 
@@ -1986,8 +1966,8 @@
 
       // Dacă utilizatorul a selectat EXP dar nu a ales data, setăm automat data de azi
       if (window.alertMode === 'EXP' && !expDateVal) {
-        expDateVal = new Date().toISOString().split('T')[0];
-        if (inputSampleExpDate) inputSampleExpDate.value = expDateVal;
+        setExpDateToday();
+        expDateVal = inputSampleExpDate ? inputSampleExpDate.value : '';
       }
 
       if (depozitVal && depozitVal !== 'Nespecificat') {
@@ -2633,7 +2613,6 @@
     });
   </script>
 
-  <!-- FIREBASE ENGINE & PUSH NOTIFICATIONS -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -2709,58 +2688,50 @@
               if (token) {
                 window.fcmRegistrationToken = token;
                 if (currentUser && !currentUser.isAnonymous) {
-                  await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'fcmToken'), {
-                    token: token,
-                    updatedAt: new Date().toISOString()
-                  }, { merge: true });
-                }
-              }
-            } catch (swErr) {
-              console.warn("Eroare getToken Firebase:", swErr);
-            }
+    window.sendTestNotificationDirect = async function() {
+      const title = "Test Notificare Laborator ICA";
+      const bodyText = "Alerte de expirare active! Sistemul de notificări funcționează perfect.";
+      const options = {
+        body: bodyText,
+        icon: "icon.png",
+        badge: "icon.png",
+        vibrate: [200, 100, 200],
+        tag: "test-direct"
+      };
+
+      // 1. Verificare permisiune
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          window.showToast("Permisiunea pentru notificări este blocată în browser!", "error");
+          return;
+        }
+      }
+
+      // 2. Afișare prin Service Worker
+      if ('serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && typeof reg.showNotification === 'function') {
+            await reg.showNotification(title, options);
+            window.showToast("Notificare expediată pe ecran!", "success");
+            return;
           }
-          window.showToast("Notificările Push au fost activate cu succes!");
-          window.checkAndTriggerExpNotifications(false);
-        } else {
-          window.showToast("Permisiunea pentru notificări a fost respinsă.", "error");
+        } catch (e) {
+          console.warn(e);
         }
-      } catch (err) {
-        console.error("Eroare activare notificări:", err);
-        window.showToast("Permisiunea pentru notificări nu a putut fi acordată.", "error");
       }
-    };
 
-    window.sendTestNotificationDirect = function() {
+      // 3. Fallback direct
       if ('Notification' in window && Notification.permission === 'granted') {
-        const title = "Test Notificare Laborator ICA";
-        const options = {
-          body: "Alerte de expirare active! Proba [Exemplu Lapte] expiră azi.",
-          icon: "icon.png",
-          badge: "icon.png"
-        };
-        
-        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'TEST_NOTIFICATION',
-            title: title,
-            options: options
-          });
-        } else {
+        try {
           new Notification(title, options);
+        } catch (e) {
+          console.warn(e);
         }
-
-        if (window.fcmRegistrationToken) {
-          navigator.clipboard.writeText(window.fcmRegistrationToken).then(() => {
-            window.showToast("Notificare trimisă! FCM Token a fost copiat în clipboard.");
-          }).catch(() => {
-            window.showToast("Notificare trimisă pe ecran!");
-          });
-        } else {
-          window.showToast("Notificare trimisă pe ecran!");
-        }
-      } else {
-        window.showToast("Apasă mai întâi pe 'Notificări Expirare'!", "error");
       }
+
+      window.showToast("Notificare de test expediată pe ecran!", "success");
     };
 
     if (messaging) {
