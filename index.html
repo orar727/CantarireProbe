@@ -2613,10 +2613,16 @@
     let unsubscribeCatalog = null;
     let currentUser = null;
 
+    // Înregistrare Service Worker cu cale relativă pentru compatibilitate GitHub Pages
+    let swRegistration = null;
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('firebase-messaging-sw.js').catch(err => {
-        console.warn("Service worker notice:", err);
-      });
+      navigator.serviceWorker.register('./firebase-messaging-sw.js', { scope: './' })
+        .then(reg => {
+          swRegistration = reg;
+        })
+        .catch(err => {
+          console.warn("Service worker notice:", err);
+        });
     }
 
     window.requestNotificationPermission = async function() {
@@ -2633,16 +2639,27 @@
           if (btnText) btnText.innerText = "Notificări Active";
           if (btnTest) btnTest.classList.remove('hidden');
 
-          if (messaging) {
-            const token = await getToken(messaging, { vapidKey: vapidKey });
-            if (token) {
-              window.fcmRegistrationToken = token;
-              if (currentUser && !currentUser.isAnonymous) {
-                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'fcmToken'), {
-                  token: token,
-                  updatedAt: new Date().toISOString()
-                }, { merge: true });
+          if (messaging && 'serviceWorker' in navigator) {
+            try {
+              if (!swRegistration) {
+                swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', { scope: './' });
               }
+              const token = await getToken(messaging, {
+                vapidKey: vapidKey,
+                serviceWorkerRegistration: swRegistration
+              });
+              
+              if (token) {
+                window.fcmRegistrationToken = token;
+                if (currentUser && !currentUser.isAnonymous) {
+                  await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'fcmToken'), {
+                    token: token,
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true });
+                }
+              }
+            } catch (swErr) {
+              console.warn("Eroare getToken Firebase:", swErr);
             }
           }
           window.showToast("Notificările Push au fost activate cu succes!");
@@ -2652,7 +2669,7 @@
         }
       } catch (err) {
         console.error("Eroare activare notificări:", err);
-        window.showToast("Lipsește fișierul firebase-messaging-sw.js pe GitHub sau permisiunea e blocată.", "error");
+        window.showToast("Permisiunea pentru notificări nu a putut fi acordată.", "error");
       }
     };
 
