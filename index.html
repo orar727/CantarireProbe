@@ -2168,13 +2168,19 @@
     window.addSample = addSample;
 
     function getFilteredSamples() {
-      if (!window.activeDepozitFilter || window.activeDepozitFilter === 'Toate') {
-        return window.samplesList;
-      }
+      // Dacă filtrul este DOAR_EXP, arătăm produsele din avans
       if (window.activeDepozitFilter === 'DOAR_EXP') {
         return window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
       }
-      return window.samplesList.filter(s => (s.depozit || 'Nespecificat') === window.activeDepozitFilter);
+      
+      // Implicit pe "Toate" sau pe un depozit anume, arătăm EXCLUSIV probele din Cântărirea Curentă (ACUM)
+      const currentWorkingSamples = window.samplesList.filter(s => s.alertMode !== 'EXP' && (!s.expDate || s.expDate.trim() === ''));
+      
+      if (!window.activeDepozitFilter || window.activeDepozitFilter === 'Toate') {
+        return currentWorkingSamples;
+      }
+      
+      return currentWorkingSamples.filter(s => (s.depozit || 'Nespecificat') === window.activeDepozitFilter);
     }
     window.getFilteredSamples = getFilteredSamples;
 
@@ -2339,7 +2345,8 @@
         }
       }
 
-      if (savedCountText) savedCountText.innerText = `${window.samplesList.length} probe salvate`;
+      const currentCount = window.samplesList.filter(s => s.alertMode !== 'EXP' && (!s.expDate || s.expDate.trim() === '')).length;
+      if (savedCountText) savedCountText.innerText = `${currentCount} probe curente`;
       if (window.lucide) window.lucide.createIcons();
     }
     window.renderTable = renderTable;
@@ -2637,19 +2644,21 @@
 
       if (btnConfirmModal) {
         btnConfirmModal.addEventListener('click', () => {
+          // Găsim probele din cântărirea curentă (non-EXP) pentru a le șterge
           const nonExpSamples = window.samplesList.filter(s => !(s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== '')));
           
           if (typeof window.deleteCloudSamplesBatch === 'function') {
             window.deleteCloudSamplesBatch(nonExpSamples);
           }
 
+          // Păstrăm exclusiv produsele programate în Avans (EXP)
           window.samplesList = window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
           window.sampleCounter = 1;
           window.saveToLocalStorage();
           window.renderTable();
           window.updateStatistics();
           window.closeConfirmModal();
-          window.showToast("Probele curente au fost șterse. Produsele din Avans au fost păstrate!", "info");
+          window.showToast("Cântărirea curentă a fost ștearsă. Produsele din Avans rămân salvate!", "info");
         });
       }
 
