@@ -682,11 +682,11 @@
       <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
       </div>
-      <h3 class="font-bold text-slate-800 text-base mb-1">Ștergi toate probele din tabel?</h3>
-      <p class="text-xs text-slate-500 mb-5">Această acțiune va șterge doar lista de probe cântărite. <strong>Catalogul de coduri de bare și depozitele memorate NU se vor șterge.</strong></p>
+      <h3 class="font-bold text-slate-800 text-base mb-1">Ștergi probele curente din tabel?</h3>
+      <p class="text-xs text-slate-500 mb-5">Această acțiune va șterge doar probele curente de lucru. <strong>Produsele programate în Avans (EXP), depozitele și catalogul EAN NU se vor șterge!</strong></p>
       <div class="flex gap-2">
         <button id="btnCancelModal" onclick="window.closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition">Anulează</button>
-        <button id="btnConfirmModal" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-md shadow-red-200">Șterge Probele</button>
+        <button id="btnConfirmModal" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-md shadow-red-200">Șterge Probele Curente</button>
       </div>
     </div>
   </div>
@@ -1021,6 +1021,8 @@
         const lotText = prod.lots.size > 0 ? Array.from(prod.lots).join(', ') : '';
         const expText = prod.expDates.size > 0 ? Array.from(prod.expDates).join(', ') : 'Nespecificată';
 
+        const safeProdName = prod.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
         item.innerHTML = `
           <div class="flex items-center gap-2.5">
             <div class="w-7 h-7 bg-amber-100 text-amber-800 font-black rounded-lg flex items-center justify-center text-xs">
@@ -1037,8 +1039,12 @@
               </div>
             </div>
           </div>
-          <div class="text-right">
+          <div class="text-right flex items-center gap-2">
             <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md font-bold">Grupată în Notificare</span>
+            <button type="button" onclick="window.deleteAvansProductGroup('${safeProdName}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 rounded-lg transition flex items-center gap-1 text-xs font-bold" title="Șterge doar acest grup de produs din avans">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Șterge Produs</span>
+            </button>
           </div>
         `;
         container.appendChild(item);
@@ -1047,6 +1053,50 @@
       if (window.lucide) window.lucide.createIcons();
     }
     window.renderAvansModal = renderAvansModal;
+
+    /* Șterge un grup specific de produs din produsele în avans */
+    function deleteAvansProductGroup(prodName) {
+      const toDelete = window.samplesList.filter(s => {
+        const isExp = s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== '');
+        return isExp && getCleanProductName(s.name) === prodName;
+      });
+
+      if (toDelete.length === 0) return;
+
+      if (typeof window.deleteCloudSamplesBatch === 'function') {
+        window.deleteCloudSamplesBatch(toDelete);
+      }
+
+      window.samplesList = window.samplesList.filter(s => !toDelete.some(td => td.id === s.id));
+      window.saveToLocalStorage();
+      window.renderTable();
+      window.renderAvansModal();
+      window.updateStatistics();
+      window.showToast(`Grupul "${prodName}" (${toDelete.length} probe) a fost șters din avans.`, "info");
+    }
+    window.deleteAvansProductGroup = deleteAvansProductGroup;
+
+    /* Șterge toate produsele din avans (EXP) */
+    function clearAllAvansSamples() {
+      const expSamples = window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
+
+      if (expSamples.length === 0) {
+        window.showToast("Nu există produse în avans de șters.", "info");
+        return;
+      }
+
+      if (typeof window.deleteCloudSamplesBatch === 'function') {
+        window.deleteCloudSamplesBatch(expSamples);
+      }
+
+      window.samplesList = window.samplesList.filter(s => !(s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== '')));
+      window.saveToLocalStorage();
+      window.renderTable();
+      window.renderAvansModal();
+      window.updateStatistics();
+      window.showToast("Toate produsele din avans au fost șterse.", "info");
+    }
+    window.clearAllAvansSamples = clearAllAvansSamples;
 
     function checkAndTriggerExpNotifications(isManualTrigger = false) {
       const now = new Date();
@@ -2594,13 +2644,20 @@
 
       if (btnConfirmModal) {
         btnConfirmModal.addEventListener('click', () => {
-          window.samplesList = [];
+          // Șterge doar probele curente (ACUM), păstrând intacte produsele din Avans (EXP)
+          const nonExpSamples = window.samplesList.filter(s => !(s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== '')));
+          
+          if (typeof window.deleteCloudSamplesBatch === 'function') {
+            window.deleteCloudSamplesBatch(nonExpSamples);
+          }
+
+          window.samplesList = window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
           window.sampleCounter = 1;
           window.saveToLocalStorage();
           window.renderTable();
           window.updateStatistics();
           window.closeConfirmModal();
-          window.showToast("Probele au fost șterse. Catalogul de coduri rămâne salvat.", "info");
+          window.showToast("Probele curente au fost șterse. Produsele din Avans au fost păstrate!", "info");
         });
       }
 
@@ -2941,11 +2998,11 @@
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
       localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
-
-      if (currentUser && !currentUser.isAnonymous) {
-        window.samplesList.forEach(sample => {
+    window.deleteCloudSamplesBatch = function(samplesArray) {
+      if (currentUser && !currentUser.isAnonymous && Array.isArray(samplesArray)) {
+        samplesArray.forEach(sample => {
           const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
-          setDoc(sampleDocRef, sample).catch(err => console.error(err));
+          deleteDoc(sampleDocRef).catch(err => console.error(err));
         });
       }
     };
