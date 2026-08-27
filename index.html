@@ -525,14 +525,20 @@
         </div>
       </div>
 
-      <div class="mb-3 flex justify-between items-center bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+      <div class="mb-3 flex justify-between items-center bg-amber-50 p-2.5 rounded-xl border border-amber-200 gap-2 flex-wrap">
         <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
           <i data-lucide="bell-ring" class="w-4 h-4 text-amber-600"></i> Notificările se trimit automat dimineața
         </span>
-        <button type="button" onclick="window.checkAndTriggerExpNotifications(true)" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-black transition shadow flex items-center gap-1">
-          <i data-lucide="send" class="w-3.5 h-3.5"></i>
-          <span>Verifică & Notifică Expirări Azi</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.checkAndTriggerExpNotifications(true)" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-black transition shadow flex items-center gap-1">
+            <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+            <span>Verifică Expirări Azi</span>
+          </button>
+          <button type="button" onclick="window.forceTestAllExpNotification()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition shadow flex items-center gap-1" title="Trimite notificare de test cu toate probele EXP din listă, indiferent de data setată">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Test Forțat EXP</span>
+          </button>
+        </div>
       </div>
 
       <div class="flex-1 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-3">
@@ -996,9 +1002,20 @@
     window.renderAvansModal = renderAvansModal;
 
     function checkAndTriggerExpNotifications(isManualTrigger = false) {
-      if (!('Notification' in window) || Notification.permission !== 'granted') {
+      if (!('Notification' in window)) {
+        if (isManualTrigger) window.showToast("Browserul nu suportă notificări push.", "error");
+        return;
+      }
+
+      if (Notification.permission !== 'granted') {
         if (isManualTrigger) {
-          window.showToast("Apasă mai întâi pe 'Notificări Expirare' pentru a acorda permisiunea!", "error");
+          Notification.requestPermission().then(perm => {
+            if (perm === 'granted') {
+              window.checkAndTriggerExpNotifications(true);
+            } else {
+              window.showToast("Permisiunea de notificări nu a fost acordată.", "error");
+            }
+          });
         }
         return;
       }
@@ -1007,10 +1024,10 @@
       const currentYear = now.getFullYear();
       const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
       const currentDay = String(now.getDate()).padStart(2, '0');
-      const todayStr = `${currentYear}-${currentMonth}-${currentDay}`;
+      const todayISO = `${currentYear}-${currentMonth}-${currentDay}`;
       const dayOfWeek = now.getDay();
 
-      const targetDates = [todayStr];
+      const targetDates = [todayISO];
 
       if (dayOfWeek === 5) {
         const sat = new Date(now);
@@ -1029,7 +1046,7 @@
 
       if (expSamples.length === 0) {
         if (isManualTrigger) {
-          window.showToast("Nicio probă programată nu expiră azi sau în weekend!", "info");
+          window.showToast(`Nicio probă nu expiră azi (${formatDateToDisplay(todayISO)}). Folosește butonul 'Test Forțat EXP'!`, "info");
         }
         return;
       }
@@ -1043,6 +1060,48 @@
 
       const bodyText = `Azi intră în lucru: ${sampleNames}${extraCount} (${expSamples.length} probe în total).`;
 
+      sendPushNotificationBanner(title, bodyText);
+      window.showToast(`Notificare expediată: ${expSamples.length} probe expiră azi!`, "success");
+    }
+    window.checkAndTriggerExpNotifications = checkAndTriggerExpNotifications;
+
+    /* Funcție dedicată pentru test forțat al tuturor probelor EXP */
+    function forceTestAllExpNotification() {
+      if (!('Notification' in window)) {
+        window.showToast("Browserul nu suportă notificări.", "error");
+        return;
+      }
+
+      if (Notification.permission !== 'granted') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            window.forceTestAllExpNotification();
+          } else {
+            window.showToast("Activează notificările mai întâi!", "error");
+          }
+        });
+        return;
+      }
+
+      const expSamples = window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
+
+      if (expSamples.length === 0) {
+        window.showToast("Nu ai nicio probă marcată cu EXP în listă!", "error");
+        return;
+      }
+
+      const sampleNames = [...new Set(expSamples.map(s => s.name))].slice(0, 5).join(', ');
+      const extraCount = expSamples.length > 5 ? ` și încă ${expSamples.length - 5}` : '';
+
+      const title = "🔔 TEST PUSH: Probe Programate în Avans";
+      const bodyText = `Probe detectate în avans: ${sampleNames}${extraCount} (${expSamples.length} probe în total).`;
+
+      sendPushNotificationBanner(title, bodyText);
+      window.showToast(`Notificare trimisă pentru toate cele ${expSamples.length} probe EXP!`, "success");
+    }
+    window.forceTestAllExpNotification = forceTestAllExpNotification;
+
+    function sendPushNotificationBanner(title, bodyText) {
       if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'TEST_NOTIFICATION',
@@ -1060,10 +1119,8 @@
           badge: 'icon.png'
         });
       }
-
-      window.showToast(`Notificare expediată: ${expSamples.length} probe expiră azi!`, "success");
     }
-    window.checkAndTriggerExpNotifications = checkAndTriggerExpNotifications;
+    window.sendPushNotificationBanner = sendPushNotificationBanner;
 
     function renderUserDepositChips() {
       const wrap = document.getElementById('userDepositChipsWrap');
