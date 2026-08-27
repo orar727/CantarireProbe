@@ -1678,14 +1678,34 @@
         window.saveUserDeposit(depozitVal);
       }
 
+      // Asociere automată a codului scanat cu numele introdus
       if (window.pendingBarcodeToMap) {
         const cleanBaseName = getCleanProductName(name);
-        window.barcodeCatalog[window.pendingBarcodeToMap] = {
+        const rawCode = String(window.pendingBarcodeToMap).trim();
+        const digits = rawCode.replace(/\D/g, '');
+
+        window.barcodeCatalog[rawCode] = {
           name: cleanBaseName,
           targetWeight: window.targetWeight
         };
+
+        // Dacă a fost cod de cântar (20-29), salvăm și prefixul de 7 cifre
+        if (digits.length >= 12 && /^(20|21|22|23|24|28|29)/.test(digits)) {
+          const prefix7 = digits.substring(0, 7);
+          const prefix6 = digits.substring(0, 6);
+          window.barcodeCatalog[prefix7] = {
+            name: cleanBaseName,
+            targetWeight: window.targetWeight
+          };
+          window.barcodeCatalog[prefix6] = {
+            name: cleanBaseName,
+            targetWeight: window.targetWeight
+          };
+        }
+
         window.saveBarcodeCatalog();
-        window.showToast(`Codul ${window.pendingBarcodeToMap} a fost asociat cu "${cleanBaseName}"!`);
+        window.renderBarcodeCatalog();
+        window.showToast(`Codul a fost memorat ca "${cleanBaseName}"!`);
         window.pendingBarcodeToMap = null;
       }
 
