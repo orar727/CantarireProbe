@@ -2168,12 +2168,12 @@
     window.addSample = addSample;
 
     function getFilteredSamples() {
-      // Dacă filtrul este DOAR_EXP, arătăm produsele din avans
+      // Dacă este selectat filtrul dedicat DOAR_EXP, afișăm produsele din avans
       if (window.activeDepozitFilter === 'DOAR_EXP') {
         return window.samplesList.filter(s => s.alertMode === 'EXP' || (s.expDate && s.expDate.trim() !== ''));
       }
       
-      // Implicit pe "Toate" sau pe un depozit anume, arătăm EXCLUSIV probele din Cântărirea Curentă (ACUM)
+      // Implicit pe "Toate" sau pe un depozit specific, arătăm EXCLUSIV probele din CÂNTĂRIREA CURENTĂ (fără EXP)
       const currentWorkingSamples = window.samplesList.filter(s => s.alertMode !== 'EXP' && (!s.expDate || s.expDate.trim() === ''));
       
       if (!window.activeDepozitFilter || window.activeDepozitFilter === 'Toate') {
