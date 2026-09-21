@@ -75,163 +75,30 @@
         background: white !important; 
         color: black !important; 
         font-size: 13pt !important; 
-        font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; 
         -webkit-user-select: text !important;
-        user-select: text !important;
+        user-select: text !important; 
       }
-      #printArea {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        user-select: text !important;
+      #printArea { 
+        display: block !important; 
+        width: 100% !important; 
+        max-width: 100% !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        user-select: text !important; 
       }
       .print-item { 
         border-bottom: 1px dotted #94a3b8 !important; 
         padding: 8px 0 !important; 
-        page-break-inside: avoid;
-        font-family: Arial, "Segoe UI", sans-serif !important;
-        color: #0f172a !important;
-        user-select: text !important;
+        page-break-inside: avoid; 
+        font-family: Arial, "Segoe UI", sans-serif !important; 
+        color: #0f172a !important; 
+        user-select: text !important; 
       }
     }
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-<div id="panouRecuperareTotal" style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#7f1d1d; color:white; padding:12px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.8); max-height:92vh; overflow-y:auto; font-family:sans-serif;">
-  <div style="font-weight:900; font-size:16px; margin-bottom:8px;">
-    🔍 RECUPERARE TOTALĂ PROBE PWA (IndexedDB + Firebase)
-  </div>
-
-  <button type="button" onclick="ruleazaScanareTotala()" style="background:#22c55e; color:#052e16; font-weight:900; font-size:15px; padding:12px 24px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,0.4);">
-    ⚡ EXTRAGE TOATE PROBELE ACUM ⚡
-  </button>
-
-  <div id="mesajStatusPwa" style="font-size:12px; margin-top:8px; color:#fecaca; font-weight:bold;">
-    Apasă butonul verde de mai sus.
-  </div>
-
-  <div id="zonaRezultatPwa" style="margin-top:10px; display:none;">
-    <textarea id="rezultatFinalPwa" readonly style="width:96%; height:260px; color:#0f172a; font-family:monospace; font-size:12px; padding:10px; border-radius:8px; background:#fff; border:2px solid #ef4444; white-space:pre;"></textarea>
-    
-    <div style="display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
-      <button type="button" onclick="copiazaDatelePwa()" style="background:#15803d; color:#fff; font-weight:bold; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
-        📋 Copiază Tot
-      </button>
-      <button type="button" onclick="descarcaFisierPwa()" style="background:#1d4ed8; color:#fff; font-weight:bold; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
-        💾 Salvează Fișier .TXT
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-async function ruleazaScanareTotala() {
-  const status = document.getElementById('mesajStatusPwa');
-  const zona = document.getElementById('zonaRezultatPwa');
-  const txt = document.getElementById('rezultatFinalPwa');
-
-  zona.style.display = 'block';
-  status.innerText = "Se scanează baza internă a telefonului...";
-  txt.value = "Căutare în curs...";
-
-  let probeGasite = [];
-  let texteGenerale = [];
-
-  // 1. Scanare LocalStorage complet
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    const val = localStorage.getItem(k);
-    if (val && (val.includes("ciocolata") || val.includes("Desert") || val.includes("Carne") || val.includes("sampleName") || val.includes("actualWeight") || val.includes("targetWeight"))) {
-      probeGasite.push(`[LocalStorage: ${k}]\n${val}`);
-    }
-  }
-
-  // 2. Scanare profunda in TOATE bazele IndexedDB (inclusiv Firebase Cache)
-  if (window.indexedDB) {
-    try {
-      const bazeDate = await window.indexedDB.databases();
-      for (const infoDb of bazeDate) {
-        await new Promise((rezolvaBaza) => {
-          const req = indexedDB.open(infoDb.name);
-          req.onsuccess = async (e) => {
-            const db = e.target.result;
-            const numeTabele = Array.from(db.objectStoreNames);
-
-            for (const numeTabel of numeTabele) {
-              await new Promise((rezolvaTabel) => {
-                try {
-                  const tx = db.transaction(numeTabel, "readonly");
-                  const store = tx.objectStore(numeTabel);
-                  const cerere = store.getAll();
-
-                  cerere.onsuccess = () => {
-                    const inregistrari = cerere.result || [];
-                    inregistrari.forEach((elem) => {
-                      const str = JSON.stringify(elem);
-                      // Daca contine orice data relevanta de laborator
-                      if (str.includes("ciocolata") || str.includes("Desert") || str.includes("Carne") || str.includes("targetWeight") || str.includes("actualWeight") || str.includes("sampleName") || str.includes("lot") || str.includes("weight")) {
-                        probeGasite.push(str);
-                      } else {
-                        texteGenerale.push(str);
-                      }
-                    });
-                    rezolvaTabel();
-                  };
-                  cerere.onerror = () => rezolvaTabel();
-                } catch (err) {
-                  rezolvaTabel();
-                }
-              });
-            }
-            rezolvaBaza();
-          };
-          req.onerror = () => rezolvaBaza();
-        });
-      }
-    } catch (errDb) {
-      probeGasite.push("Eroare acces IndexedDB: " + errDb.message);
-    }
-  }
-
-  // 3. Afisare rezultate
-  if (probeGasite.length > 0) {
-    status.innerText = `Succes! S-au găsit ${probeGasite.length} înregistrări.`;
-    txt.value = probeGasite.join("\n\n================================\n\n");
-  } else if (texteGenerale.length > 0) {
-    status.innerText = `S-au extras ${texteGenerale.length} blocuri brute din memorie.`;
-    txt.value = texteGenerale.join("\n\n---\n\n");
-  } else {
-    status.innerText = "Nu s-au putut extrage înregistrări din IndexedDB.";
-    txt.value = "Memoria pare curățată sau inaccesibilă.";
-  }
-}
-
-function copiazaDatelePwa() {
-  const txt = document.getElementById('rezultatFinalPwa');
-  txt.select();
-  txt.setSelectionRange(0, 99999);
-  try {
-    document.execCommand('copy');
-    alert("Toate datele au fost copiate! Le poți lipi în WhatsApp sau Notițe.");
-  } catch(e) {
-    navigator.clipboard.writeText(txt.value);
-    alert("Copiat!");
-  }
-}
-
-function descarcaFisierPwa() {
-  const continut = document.getElementById('rezultatFinalPwa').value;
-  const blob = new Blob([continut], { type: 'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `probe_recuperate_${new Date().toISOString().slice(0,10)}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-</script>
 
   <!-- Zona exclusivă pentru printare curată -->
   <div id="printArea" class="hidden print-only p-8 max-w-2xl mx-auto">
@@ -440,7 +307,7 @@ function descarcaFisierPwa() {
                 </label>
                 <div class="flex items-center gap-2">
                   <button type="button" onclick="window.openBarcodeScanner()" class="px-2 py-0.5 bg-amber-200/80 hover:bg-amber-200 text-amber-900 rounded-md text-[10px] font-bold flex items-center gap-1 border border-amber-300 transition">
-                    <i data-lucide="scan" class="w-3 h-3"></i> Scanează EAN
+                    <i data-lucide="scan" class="w-3.5 h-3.5"></i> Scanează EAN
                   </button>
                   <label class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 cursor-pointer">
                     <input type="checkbox" id="checkKeepLabelWeight" class="rounded text-amber-600 focus:ring-amber-500 w-3 h-3">
@@ -821,6 +688,13 @@ function descarcaFisierPwa() {
     window.soundMode = 'full'; 
     window.audioCtx = null;
     window.html5QrCodeInstance = null;
+
+    /* Blocare ieșire accidentală / Undo la tasta Back de pe telefon */
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', function () {
+      history.pushState(null, null, location.href);
+      window.showToast("Navigarea înapoi este securizată.", "info");
+    });
 
     /* Funcții Ajutătoare Formatare Dată */
     function formatDateToDisplay(dateStr) {
@@ -1575,7 +1449,7 @@ function descarcaFisierPwa() {
         return;
       }
 
-      // Dacă este cod complet nou: îl preia direct în câmpul de nume fără ferestre inutile
+      // Dacă este cod complet nou
       window.pendingBarcodeToMap = cleanText;
       if (inputSampleName) {
         inputSampleName.value = cleanText;
@@ -1811,7 +1685,7 @@ function descarcaFisierPwa() {
         window.saveUserDeposit(depozitVal);
       }
 
-      // Asociere automată a codului scanat cu numele introdus
+      // Asociere automată a codului scanat
       if (window.pendingBarcodeToMap) {
         const cleanBaseName = getCleanProductName(name);
         const rawCode = String(window.pendingBarcodeToMap).trim();
@@ -1822,7 +1696,6 @@ function descarcaFisierPwa() {
           targetWeight: window.targetWeight
         };
 
-        // Dacă a fost cod de cântar (20-29), salvăm și prefixul de 7 cifre
         if (digits.length >= 12 && /^(20|21|22|23|24|28|29)/.test(digits)) {
           const prefix7 = digits.substring(0, 7);
           const prefix6 = digits.substring(0, 6);
@@ -2134,8 +2007,17 @@ function descarcaFisierPwa() {
     }
     window.updateStatistics = updateStatistics;
 
+    /* Salvare locală securizată cu seif permanent de rezervă */
     function saveToLocalStorage() {
       localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
+      
+      // Seif de rezervă permanent
+      let vault = {};
+      try {
+        vault = JSON.parse(localStorage.getItem('lab_samples_vault') || '{}');
+      } catch(e) { vault = {}; }
+      window.samplesList.forEach(s => { vault[s.id] = s; });
+      localStorage.setItem('lab_samples_vault', JSON.stringify(vault));
     }
     window.saveToLocalStorage = saveToLocalStorage;
 
@@ -2273,23 +2155,49 @@ function descarcaFisierPwa() {
       const data = localStorage.getItem('lab_samples_data');
       if (data) {
         try {
-          window.samplesList = JSON.parse(data);
-          window.samplesList.sort((a, b) => (a.order || a.id) - (b.order || b.id));
-          window.samplesList.forEach(s => {
-            const match = s.name.match(/PROBA-(\d+)/);
-            if (match) {
-              const num = parseInt(match[1]);
-              if (num >= window.sampleCounter) window.sampleCounter = num + 1;
-            }
-          });
-          window.renderTable();
-          window.updateStatistics();
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            window.mergeSamples(parsed);
+          }
         } catch (e) {
           console.error(e);
         }
       }
+      // Verificăm și seiful permanent
+      const vaultData = localStorage.getItem('lab_samples_vault');
+      if (vaultData) {
+        try {
+          const vault = JSON.parse(vaultData);
+          const vaultItems = Object.values(vault);
+          if (vaultItems.length > 0) {
+            window.mergeSamples(vaultItems);
+          }
+        } catch(e) {}
+      }
     }
     window.loadFromLocalStorage = loadFromLocalStorage;
+
+    /* Funcție de unire sigură (Non-distructivă) a probelor */
+    function mergeSamples(newSamples) {
+      if (!Array.isArray(newSamples)) return;
+      const map = new Map();
+      window.samplesList.forEach(s => map.set(s.id, s));
+      newSamples.forEach(s => map.set(s.id, s));
+      window.samplesList = Array.from(map.values());
+      window.samplesList.sort((a, b) => (a.order || a.id) - (b.order || b.id));
+
+      window.samplesList.forEach(s => {
+        const match = s.name.match(/PROBA-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num >= window.sampleCounter) window.sampleCounter = num + 1;
+        }
+      });
+
+      window.renderTable();
+      window.updateStatistics();
+    }
+    window.mergeSamples = mergeSamples;
 
     function exportCSV() {
       const filtered = window.getFilteredSamples();
@@ -2395,7 +2303,8 @@ function descarcaFisierPwa() {
 
           window.samplesList = [];
           window.sampleCounter = 1;
-          window.saveToLocalStorage();
+          localStorage.setItem('lab_samples_data', JSON.stringify([]));
+          localStorage.removeItem('lab_samples_vault');
           window.renderTable();
           window.updateStatistics();
           window.closeConfirmModal();
@@ -2430,7 +2339,7 @@ function descarcaFisierPwa() {
     });
   </script>
 
-  <!-- FIREBASE ENGINE & CLOUD SYNC -->
+  <!-- FIREBASE ENGINE & CLOUD SYNC CU PROTECȚIE NON-DISTRUCTIVĂ -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -2460,14 +2369,14 @@ function descarcaFisierPwa() {
     window.saveUserDepositsToCloud = function() {
       if (currentUser && !currentUser.isAnonymous) {
         const userDepositsDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'deposits');
-        setDoc(userDepositsDocRef, { list: window.userDepositsList || [] }).catch(err => console.error(err));
+        setDoc(userDepositsDocRef, { list: window.userDepositsList || [] }, { merge: true }).catch(err => console.error(err));
       }
     };
 
     window.saveBarcodeCatalogToCloud = function() {
       if (currentUser && !currentUser.isAnonymous) {
         const catalogDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'catalog');
-        setDoc(catalogDocRef, { data: window.barcodeCatalog || {} }).catch(err => console.error(err));
+        setDoc(catalogDocRef, { data: window.barcodeCatalog || {} }, { merge: true }).catch(err => console.error(err));
       }
     };
 
@@ -2587,7 +2496,8 @@ function descarcaFisierPwa() {
         const userDepositsDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'deposits');
         unsubscribeUserDeposits = onSnapshot(userDepositsDocRef, (docSnap) => {
           if (docSnap.exists() && Array.isArray(docSnap.data().list)) {
-            window.userDepositsList = docSnap.data().list;
+            const setDep = new Set([...(window.userDepositsList || []), ...docSnap.data().list]);
+            window.userDepositsList = Array.from(setDep);
             localStorage.setItem('lab_user_deposits', JSON.stringify(window.userDepositsList));
             window.renderUserDepositChips();
             window.updateDepozitFiltersAndSuggestions();
@@ -2597,7 +2507,7 @@ function descarcaFisierPwa() {
         const catalogDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'catalog');
         unsubscribeCatalog = onSnapshot(catalogDocRef, (docSnap) => {
           if (docSnap.exists() && docSnap.data().data) {
-            window.barcodeCatalog = docSnap.data().data;
+            window.barcodeCatalog = Object.assign({}, window.barcodeCatalog, docSnap.data().data);
             localStorage.setItem('lab_barcode_catalog', JSON.stringify(window.barcodeCatalog));
             window.renderBarcodeCatalog();
           }
@@ -2605,18 +2515,24 @@ function descarcaFisierPwa() {
 
         const userSamplesCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'samples');
         
+        // Sincronizare non-distructivă cu unire (Merge)
         unsubscribeFirestore = onSnapshot(userSamplesCollection, (snapshot) => {
-          window.samplesList = [];
+          let cloudSamples = [];
           snapshot.forEach(docSnap => {
-            window.samplesList.push(docSnap.data());
+            cloudSamples.push(docSnap.data());
           });
 
-          window.samplesList.sort((a, b) => (a.order || a.id) - (b.order || b.id));
+          // Unim datele din Cloud cu cele deja existente local
+          window.mergeSamples(cloudSamples);
           localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
-          window.renderTable();
-          window.updateStatistics();
+
+          // Încărcăm înapoi în Cloud orice probă locală care nu apucase să fie transmisă
+          window.samplesList.forEach(sample => {
+            const sampleDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'samples', sample.id.toString());
+            setDoc(sampleDocRef, sample, { merge: true }).catch(() => {});
+          });
         }, (err) => {
-          console.error("Eroare la sincronizarea din Cloud:", err);
+          console.error("Eroare conexiune Cloud:", err);
         });
 
       } else {
@@ -2630,14 +2546,17 @@ function descarcaFisierPwa() {
       }
     });
 
+    // Salvare automată instantă către Cloud la adăugare
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
-      localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
+      if (typeof originalSaveToLocalStorage === 'function') {
+        originalSaveToLocalStorage();
+      }
 
       if (currentUser && !currentUser.isAnonymous) {
         window.samplesList.forEach(sample => {
           const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
-          setDoc(sampleDocRef, sample).catch(err => console.error(err));
+          setDoc(sampleDocRef, sample, { merge: true }).catch(err => console.error(err));
         });
       }
     };
