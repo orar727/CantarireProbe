@@ -99,123 +99,134 @@
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
- <!-- BUTON RECUPERARE DE URGENTA COMPLET (IndexedDB + Firebase + LocalStorage) -->
-<div style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#991b1b; color:white; padding:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.6); max-height:90vh; overflow-y:auto;">
-  <button type="button" onclick="recupereazaToateProbeleAdanc()" style="background:#fff; color:#991b1b; font-weight:900; font-size:16px; padding:12px 20px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
-    🚨 EXTRAGE PROBELE DIN MEMORIA ADÂNCĂ (IndexedDB) 🚨
+<div id="panouRecuperareTotal" style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#7f1d1d; color:white; padding:12px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.8); max-height:92vh; overflow-y:auto; font-family:sans-serif;">
+  <div style="font-weight:900; font-size:16px; margin-bottom:8px;">
+    🔍 RECUPERARE TOTALĂ PROBE PWA (IndexedDB + Firebase)
+  </div>
+
+  <button type="button" onclick="ruleazaScanareTotala()" style="background:#22c55e; color:#052e16; font-weight:900; font-size:15px; padding:12px 24px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,0.4);">
+    ⚡ EXTRAGE TOATE PROBELE ACUM ⚡
   </button>
-  <div id="statusScanare" style="font-size:12px; margin-top:6px; color:#fecaca;"></div>
-  
-  <div id="zonaRecuperare" style="margin-top:10px; display:none;">
-    <textarea id="textDateRecuperate" style="width:96%; height:260px; color:#000; font-family:monospace; font-size:12px; padding:10px; border-radius:8px; background:#fff; border:2px solid #f87171;"></textarea>
-    <br>
-    <div style="display:flex; justify-content:center; gap:10px; margin-top:8px;">
-      <button type="button" onclick="copiazaRezultatul()" style="background:#16a34a; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px;">
-        📋 Copiază Toate Probele
+
+  <div id="mesajStatusPwa" style="font-size:12px; margin-top:8px; color:#fecaca; font-weight:bold;">
+    Apasă butonul verde de mai sus.
+  </div>
+
+  <div id="zonaRezultatPwa" style="margin-top:10px; display:none;">
+    <textarea id="rezultatFinalPwa" readonly style="width:96%; height:260px; color:#0f172a; font-family:monospace; font-size:12px; padding:10px; border-radius:8px; background:#fff; border:2px solid #ef4444; white-space:pre;"></textarea>
+    
+    <div style="display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
+      <button type="button" onclick="copiazaDatelePwa()" style="background:#15803d; color:#fff; font-weight:bold; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
+        📋 Copiază Tot
       </button>
-      <button type="button" onclick="descarcaFisierText()" style="background:#2563eb; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px;">
-        💾 Descarcă Fișier .TXT
+      <button type="button" onclick="descarcaFisierPwa()" style="background:#1d4ed8; color:#fff; font-weight:bold; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
+        💾 Salvează Fișier .TXT
       </button>
     </div>
   </div>
 </div>
 
 <script>
-async function recupereazaToateProbeleAdanc() {
-  const status = document.getElementById('statusScanare');
-  const zona = document.getElementById('zonaRecuperare');
-  const txt = document.getElementById('textDateRecuperate');
-  
-  zona.style.display = 'block';
-  status.innerText = "Se scanează memoria telefonului...";
-  txt.value = "Se caută datele...";
-  
-  let toateProbele = [];
+async function ruleazaScanareTotala() {
+  const status = document.getElementById('mesajStatusPwa');
+  const zona = document.getElementById('zonaRezultatPwa');
+  const txt = document.getElementById('rezultatFinalPwa');
 
-  // 1. Căutare în LocalStorage
+  zona.style.display = 'block';
+  status.innerText = "Se scanează baza internă a telefonului...";
+  txt.value = "Căutare în curs...";
+
+  let probeGasite = [];
+  let texteGenerale = [];
+
+  // 1. Scanare LocalStorage complet
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    try {
-      const val = localStorage.getItem(k);
-      if (val && (val.includes("Desert") || val.includes("Carne") || val.includes("targetWeight") || val.includes("actualWeight") || val.includes("diff"))) {
-        toateProbele.push("=== GĂSIT ÎN LOCALSTORAGE [" + k + "] ===\n" + val);
-      }
-    } catch(e) {}
-  }
-
-  // 2. Căutare adâncă în IndexedDB (Firebase Offline Cache)
-  if (window.indexedDB) {
-    try {
-      const dbs = await window.indexedDB.databases();
-      for (const dbInfo of dbs) {
-        await new Promise((resolve) => {
-          const req = indexedDB.open(dbInfo.name);
-          req.onsuccess = async (event) => {
-            const db = event.target.result;
-            const storeNames = Array.from(db.objectStoreNames);
-            
-            for (const storeName of storeNames) {
-              await new Promise((resStore) => {
-                try {
-                  const tx = db.transaction(storeName, "readonly");
-                  const store = tx.objectStore(storeName);
-                  const getAllReq = store.getAll();
-                  
-                  getAllReq.onsuccess = () => {
-                    const records = getAllReq.result;
-                    if (records && records.length > 0) {
-                      records.forEach(item => {
-                        const str = JSON.stringify(item);
-                        // Căutăm orice obiect care are date de cântărire
-                        if (str.includes("targetWeight") || str.includes("actualWeight") || str.includes("Desert") || str.includes("diff") || str.includes("sampleName")) {
-                          toateProbele.push(str);
-                        }
-                      });
-                    }
-                    resStore();
-                  };
-                  getAllReq.onerror = () => resStore();
-                } catch(err) {
-                  resStore();
-                }
-              });
-            }
-            resolve();
-          };
-          req.onerror = () => resolve();
-        });
-      }
-    } catch (errDb) {
-      toateProbele.push("Eroare la citirea IndexedDB: " + errDb.message);
+    const val = localStorage.getItem(k);
+    if (val && (val.includes("ciocolata") || val.includes("Desert") || val.includes("Carne") || val.includes("sampleName") || val.includes("actualWeight") || val.includes("targetWeight"))) {
+      probeGasite.push(`[LocalStorage: ${k}]\n${val}`);
     }
   }
 
-  status.innerText = `Scanare finalizată! Înregistrări găsite: ${toateProbele.length}`;
-  if (toateProbele.length === 0) {
-    txt.value = "Nu s-au putut extrage date suplimentare din IndexedDB.";
+  // 2. Scanare profunda in TOATE bazele IndexedDB (inclusiv Firebase Cache)
+  if (window.indexedDB) {
+    try {
+      const bazeDate = await window.indexedDB.databases();
+      for (const infoDb of bazeDate) {
+        await new Promise((rezolvaBaza) => {
+          const req = indexedDB.open(infoDb.name);
+          req.onsuccess = async (e) => {
+            const db = e.target.result;
+            const numeTabele = Array.from(db.objectStoreNames);
+
+            for (const numeTabel of numeTabele) {
+              await new Promise((rezolvaTabel) => {
+                try {
+                  const tx = db.transaction(numeTabel, "readonly");
+                  const store = tx.objectStore(numeTabel);
+                  const cerere = store.getAll();
+
+                  cerere.onsuccess = () => {
+                    const inregistrari = cerere.result || [];
+                    inregistrari.forEach((elem) => {
+                      const str = JSON.stringify(elem);
+                      // Daca contine orice data relevanta de laborator
+                      if (str.includes("ciocolata") || str.includes("Desert") || str.includes("Carne") || str.includes("targetWeight") || str.includes("actualWeight") || str.includes("sampleName") || str.includes("lot") || str.includes("weight")) {
+                        probeGasite.push(str);
+                      } else {
+                        texteGenerale.push(str);
+                      }
+                    });
+                    rezolvaTabel();
+                  };
+                  cerere.onerror = () => rezolvaTabel();
+                } catch (err) {
+                  rezolvaTabel();
+                }
+              });
+            }
+            rezolvaBaza();
+          };
+          req.onerror = () => rezolvaBaza();
+        });
+      }
+    } catch (errDb) {
+      probeGasite.push("Eroare acces IndexedDB: " + errDb.message);
+    }
+  }
+
+  // 3. Afisare rezultate
+  if (probeGasite.length > 0) {
+    status.innerText = `Succes! S-au găsit ${probeGasite.length} înregistrări.`;
+    txt.value = probeGasite.join("\n\n================================\n\n");
+  } else if (texteGenerale.length > 0) {
+    status.innerText = `S-au extras ${texteGenerale.length} blocuri brute din memorie.`;
+    txt.value = texteGenerale.join("\n\n---\n\n");
   } else {
-    txt.value = toateProbele.join("\n\n---\n\n");
+    status.innerText = "Nu s-au putut extrage înregistrări din IndexedDB.";
+    txt.value = "Memoria pare curățată sau inaccesibilă.";
   }
 }
 
-function copiazaRezultatul() {
-  const txt = document.getElementById('textDateRecuperate');
+function copiazaDatelePwa() {
+  const txt = document.getElementById('rezultatFinalPwa');
   txt.select();
   txt.setSelectionRange(0, 99999);
-  navigator.clipboard.writeText(txt.value).then(() => {
-    alert("Datele au fost copiate în clipboard! Le poți lipi în WhatsApp sau Notițe.");
-  }).catch(() => {
+  try {
     document.execCommand('copy');
+    alert("Toate datele au fost copiate! Le poți lipi în WhatsApp sau Notițe.");
+  } catch(e) {
+    navigator.clipboard.writeText(txt.value);
     alert("Copiat!");
-  });
+  }
 }
 
-function descarcaFisierText() {
-  const continut = document.getElementById('textDateRecuperate').value;
+function descarcaFisierPwa() {
+  const continut = document.getElementById('rezultatFinalPwa').value;
   const blob = new Blob([continut], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `recuperare_probe_${Date.now()}.txt`;
+  a.download = `probe_recuperate_${new Date().toISOString().slice(0,10)}.txt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
