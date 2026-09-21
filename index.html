@@ -99,42 +99,126 @@
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-  <!-- BUTON RECUPERARE DE URGENTA -->
-<div style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#b91c1c; color:white; padding:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-  <button type="button" onclick="recupereazaTot()" style="background:#fff; color:#b91c1c; font-weight:900; font-size:15px; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
-    🚨 APASĂ AICI PENTRU RECUPERARE TOATE PROBELE 🚨
+ <!-- BUTON RECUPERARE DE URGENTA COMPLET (IndexedDB + Firebase + LocalStorage) -->
+<div style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#991b1b; color:white; padding:12px; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.6); max-height:90vh; overflow-y:auto;">
+  <button type="button" onclick="recupereazaToateProbeleAdanc()" style="background:#fff; color:#991b1b; font-weight:900; font-size:16px; padding:12px 20px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+    🚨 EXTRAGE PROBELE DIN MEMORIA ADÂNCĂ (IndexedDB) 🚨
   </button>
+  <div id="statusScanare" style="font-size:12px; margin-top:6px; color:#fecaca;"></div>
+  
   <div id="zonaRecuperare" style="margin-top:10px; display:none;">
-    <textarea id="textDateRecuperate" style="width:95%; height:200px; color:#000; font-family:monospace; font-size:12px; padding:8px; border-radius:6px; background:#fff;"></textarea>
+    <textarea id="textDateRecuperate" style="width:96%; height:260px; color:#000; font-family:monospace; font-size:12px; padding:10px; border-radius:8px; background:#fff; border:2px solid #f87171;"></textarea>
     <br>
-    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('textDateRecuperate').value); alert('Copiat cu succes!');" style="margin-top:8px; background:#16a34a; color:#fff; font-weight:bold; padding:8px 16px; border-radius:6px; border:none; cursor:pointer;">
-      📋 Copiază Toate Probele
-    </button>
+    <div style="display:flex; justify-content:center; gap:10px; margin-top:8px;">
+      <button type="button" onclick="copiazaRezultatul()" style="background:#16a34a; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px;">
+        📋 Copiază Toate Probele
+      </button>
+      <button type="button" onclick="descarcaFisierText()" style="background:#2563eb; color:#fff; font-weight:bold; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px;">
+        💾 Descarcă Fișier .TXT
+      </button>
+    </div>
   </div>
 </div>
 
 <script>
-async function recupereazaTot() {
+async function recupereazaToateProbeleAdanc() {
+  const status = document.getElementById('statusScanare');
   const zona = document.getElementById('zonaRecuperare');
   const txt = document.getElementById('textDateRecuperate');
+  
   zona.style.display = 'block';
-  let dateGasite = [];
+  status.innerText = "Se scanează memoria telefonului...";
+  txt.value = "Se caută datele...";
+  
+  let toateProbele = [];
 
+  // 1. Căutare în LocalStorage
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    dateGasite.push("=== CHEIE: " + k + " ===\n" + localStorage.getItem(k));
-  }
-
-  if (window.indexedDB && indexedDB.databases) {
     try {
-      const dbs = await indexedDB.databases();
-      for (const dbInfo of dbs) {
-        dateGasite.push("=== BAZA INDEXEDDB: " + dbInfo.name + " ===");
+      const val = localStorage.getItem(k);
+      if (val && (val.includes("Desert") || val.includes("Carne") || val.includes("targetWeight") || val.includes("actualWeight") || val.includes("diff"))) {
+        toateProbele.push("=== GĂSIT ÎN LOCALSTORAGE [" + k + "] ===\n" + val);
       }
     } catch(e) {}
   }
 
-  txt.value = dateGasite.join("\n\n--------------------------------\n\n");
+  // 2. Căutare adâncă în IndexedDB (Firebase Offline Cache)
+  if (window.indexedDB) {
+    try {
+      const dbs = await window.indexedDB.databases();
+      for (const dbInfo of dbs) {
+        await new Promise((resolve) => {
+          const req = indexedDB.open(dbInfo.name);
+          req.onsuccess = async (event) => {
+            const db = event.target.result;
+            const storeNames = Array.from(db.objectStoreNames);
+            
+            for (const storeName of storeNames) {
+              await new Promise((resStore) => {
+                try {
+                  const tx = db.transaction(storeName, "readonly");
+                  const store = tx.objectStore(storeName);
+                  const getAllReq = store.getAll();
+                  
+                  getAllReq.onsuccess = () => {
+                    const records = getAllReq.result;
+                    if (records && records.length > 0) {
+                      records.forEach(item => {
+                        const str = JSON.stringify(item);
+                        // Căutăm orice obiect care are date de cântărire
+                        if (str.includes("targetWeight") || str.includes("actualWeight") || str.includes("Desert") || str.includes("diff") || str.includes("sampleName")) {
+                          toateProbele.push(str);
+                        }
+                      });
+                    }
+                    resStore();
+                  };
+                  getAllReq.onerror = () => resStore();
+                } catch(err) {
+                  resStore();
+                }
+              });
+            }
+            resolve();
+          };
+          req.onerror = () => resolve();
+        });
+      }
+    } catch (errDb) {
+      toateProbele.push("Eroare la citirea IndexedDB: " + errDb.message);
+    }
+  }
+
+  status.innerText = `Scanare finalizată! Înregistrări găsite: ${toateProbele.length}`;
+  if (toateProbele.length === 0) {
+    txt.value = "Nu s-au putut extrage date suplimentare din IndexedDB.";
+  } else {
+    txt.value = toateProbele.join("\n\n---\n\n");
+  }
+}
+
+function copiazaRezultatul() {
+  const txt = document.getElementById('textDateRecuperate');
+  txt.select();
+  txt.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(txt.value).then(() => {
+    alert("Datele au fost copiate în clipboard! Le poți lipi în WhatsApp sau Notițe.");
+  }).catch(() => {
+    document.execCommand('copy');
+    alert("Copiat!");
+  });
+}
+
+function descarcaFisierText() {
+  const continut = document.getElementById('textDateRecuperate').value;
+  const blob = new Blob([continut], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `recuperare_probe_${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 </script>
 
