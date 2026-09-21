@@ -99,6 +99,44 @@
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
+  <!-- BUTON RECUPERARE DE URGENTA -->
+<div style="position:fixed; top:0; left:0; width:100%; z-index:999999; background:#b91c1c; color:white; padding:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+  <button type="button" onclick="recupereazaTot()" style="background:#fff; color:#b91c1c; font-weight:900; font-size:15px; padding:10px 18px; border-radius:8px; border:none; cursor:pointer;">
+    🚨 APASĂ AICI PENTRU RECUPERARE TOATE PROBELE 🚨
+  </button>
+  <div id="zonaRecuperare" style="margin-top:10px; display:none;">
+    <textarea id="textDateRecuperate" style="width:95%; height:200px; color:#000; font-family:monospace; font-size:12px; padding:8px; border-radius:6px; background:#fff;"></textarea>
+    <br>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('textDateRecuperate').value); alert('Copiat cu succes!');" style="margin-top:8px; background:#16a34a; color:#fff; font-weight:bold; padding:8px 16px; border-radius:6px; border:none; cursor:pointer;">
+      📋 Copiază Toate Probele
+    </button>
+  </div>
+</div>
+
+<script>
+async function recupereazaTot() {
+  const zona = document.getElementById('zonaRecuperare');
+  const txt = document.getElementById('textDateRecuperate');
+  zona.style.display = 'block';
+  let dateGasite = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    dateGasite.push("=== CHEIE: " + k + " ===\n" + localStorage.getItem(k));
+  }
+
+  if (window.indexedDB && indexedDB.databases) {
+    try {
+      const dbs = await indexedDB.databases();
+      for (const dbInfo of dbs) {
+        dateGasite.push("=== BAZA INDEXEDDB: " + dbInfo.name + " ===");
+      }
+    } catch(e) {}
+  }
+
+  txt.value = dateGasite.join("\n\n--------------------------------\n\n");
+}
+</script>
 
   <!-- Zona exclusivă pentru printare curată -->
   <div id="printArea" class="hidden print-only p-8 max-w-2xl mx-auto">
