@@ -143,7 +143,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
         </button>
 
-        <button id="btnResetAll" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow">
+        <button id="btnResetAll" type="button" class="bg-red-600 hover:bg-red-700 active:scale-95 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow cursor-pointer">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Șterge Tot
         </button>
       </div>
@@ -606,16 +606,16 @@
   </div>
 
   <!-- MODAL: Ștergere Generală -->
-  <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity">
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 text-center">
       <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3">
         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
       </div>
       <h3 class="font-bold text-slate-800 text-base mb-1">Ștergi toate probele din tabel?</h3>
-      <p class="text-xs text-slate-500 mb-5">Această acțiune va goli tabelul curent de lucru. <strong>Depozitele memorate și catalogul de coduri EAN rămân salvate!</strong></p>
+      <p class="text-xs text-slate-500 mb-5">Această acțiune va goli tabelul curent și Cloud-ul. <strong>Depozitele memorate și catalogul de coduri EAN rămân salvate!</strong></p>
       <div class="flex gap-2">
-        <button id="btnCancelModal" onclick="window.closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs transition">Anulează</button>
-        <button id="btnConfirmModal" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition shadow-md shadow-red-200">Șterge Tot</button>
+        <button id="btnCancelModal" type="button" onclick="window.closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer">Anulează</button>
+        <button id="btnConfirmModal" type="button" class="flex-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-md shadow-red-200 cursor-pointer">Confirmă Ștergerea</button>
       </div>
     </div>
   </div>
@@ -2011,7 +2011,6 @@
     function saveToLocalStorage() {
       localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
       
-      // Seif de rezervă permanent
       let vault = {};
       try {
         vault = JSON.parse(localStorage.getItem('lab_samples_vault') || '{}');
@@ -2163,7 +2162,6 @@
           console.error(e);
         }
       }
-      // Verificăm și seiful permanent
       const vaultData = localStorage.getItem('lab_samples_vault');
       if (vaultData) {
         try {
@@ -2255,11 +2253,18 @@
     }
     window.exportClipboard = exportClipboard;
 
+    function openConfirmModal() {
+      const modal = document.getElementById('confirmModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+    window.openConfirmModal = openConfirmModal;
+
     function closeConfirmModal() {
-      const confirmModal = document.getElementById('confirmModal');
-      if (confirmModal) {
-        confirmModal.classList.add('opacity-0');
-        setTimeout(() => confirmModal.classList.add('hidden'), 200);
+      const modal = document.getElementById('confirmModal');
+      if (modal) {
+        modal.classList.add('hidden');
       }
     }
     window.closeConfirmModal = closeConfirmModal;
@@ -2270,7 +2275,6 @@
       const selectButtonCount = document.getElementById('selectButtonCount');
       const btnExactTarget = document.getElementById('btnExactTarget');
       const btnResetAll = document.getElementById('btnResetAll');
-      const confirmModal = document.getElementById('confirmModal');
       const btnConfirmModal = document.getElementById('btnConfirmModal');
 
       if (btnExactTarget) {
@@ -2282,25 +2286,25 @@
       if (inputLabelWeight) inputLabelWeight.addEventListener('input', window.updateKeypad);
       if (selectButtonCount) selectButtonCount.addEventListener('change', window.updateKeypad);
 
+      // Deschidere modal Șterge Tot fără delay
       if (btnResetAll) {
-        btnResetAll.addEventListener('click', () => {
+        btnResetAll.onclick = function(e) {
+          e.preventDefault();
           if (window.samplesList.length === 0) {
             window.showToast("Tabelul este deja gol.", "info");
             return;
           }
-          if (confirmModal) {
-            confirmModal.classList.remove('hidden');
-            setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
-          }
-        });
+          window.openConfirmModal();
+        };
       }
 
+      // Executare instantanee a ștergerii la confirmare
       if (btnConfirmModal) {
-        btnConfirmModal.addEventListener('click', async () => {
-          if (typeof window.clearCloudSamples === 'function') {
-            await window.clearCloudSamples();
-          }
-
+        btnConfirmModal.onclick = async function(e) {
+          e.preventDefault();
+          
+          // 1. Curățare locală instantanee
+          const samplesToClear = [...window.samplesList];
           window.samplesList = [];
           window.sampleCounter = 1;
           localStorage.setItem('lab_samples_data', JSON.stringify([]));
@@ -2308,8 +2312,13 @@
           window.renderTable();
           window.updateStatistics();
           window.closeConfirmModal();
-          window.showToast("Toate probele au fost șterse definitiv din tabel!", "info");
-        });
+          window.showToast("Toate probele au fost șterse definitiv!");
+
+          // 2. Curățare în bloc în Cloud (fără să blocheze interfața)
+          if (typeof window.clearCloudSamplesBatch === 'function') {
+            window.clearCloudSamplesBatch(samplesToClear);
+          }
+        };
       }
 
       document.addEventListener('keydown', (e) => {
@@ -2339,11 +2348,11 @@
     });
   </script>
 
-  <!-- FIREBASE ENGINE & CLOUD SYNC CU PROTECȚIE NON-DISTRUCTIVĂ -->
+  <!-- FIREBASE ENGINE & CLOUD SYNC RAPID -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, writeBatch, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'asistent-cantarire-probe';
     const firebaseConfig = typeof __firebase_config !== 'undefined'
@@ -2455,15 +2464,18 @@
       }
     };
 
-    window.clearCloudSamples = async function() {
-      if (currentUser && !currentUser.isAnonymous && Array.isArray(window.samplesList)) {
-        for (const sample of window.samplesList) {
-          try {
+    /* Ștergere ultra-rapidă în Cloud folosind writeBatch */
+    window.clearCloudSamplesBatch = async function(itemsList) {
+      if (currentUser && !currentUser.isAnonymous && Array.isArray(itemsList) && itemsList.length > 0) {
+        try {
+          const batch = writeBatch(db);
+          itemsList.forEach(sample => {
             const sampleDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'samples', sample.id.toString());
-            await deleteDoc(sampleDocRef);
-          } catch (err) {
-            console.error("Eroare ștergere cloud:", err);
-          }
+            batch.delete(sampleDocRef);
+          });
+          await batch.commit();
+        } catch (err) {
+          console.error("Eroare batch delete Cloud:", err);
         }
       }
     };
@@ -2515,18 +2527,17 @@
 
         const userSamplesCollection = collection(db, 'artifacts', appId, 'users', user.uid, 'samples');
         
-        // Sincronizare non-distructivă cu unire (Merge)
+        // Sincronizare non-distructivă inteligentă
         unsubscribeFirestore = onSnapshot(userSamplesCollection, (snapshot) => {
           let cloudSamples = [];
           snapshot.forEach(docSnap => {
             cloudSamples.push(docSnap.data());
           });
 
-          // Unim datele din Cloud cu cele deja existente local
           window.mergeSamples(cloudSamples);
           localStorage.setItem('lab_samples_data', JSON.stringify(window.samplesList));
 
-          // Încărcăm înapoi în Cloud orice probă locală care nu apucase să fie transmisă
+          // Retransmisie automată a probelor locale care nu erau încă în Cloud
           window.samplesList.forEach(sample => {
             const sampleDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'samples', sample.id.toString());
             setDoc(sampleDocRef, sample, { merge: true }).catch(() => {});
@@ -2546,7 +2557,6 @@
       }
     });
 
-    // Salvare automată instantă către Cloud la adăugare
     const originalSaveToLocalStorage = window.saveToLocalStorage;
     window.saveToLocalStorage = function() {
       if (typeof originalSaveToLocalStorage === 'function') {
